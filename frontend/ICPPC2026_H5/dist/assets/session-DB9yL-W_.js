@@ -1,0 +1,1 @@
+import{I as s}from"./index-CTnwPDf-.js";const n="icppc2026_h5.identity";function i(t){return typeof t=="string"&&s.some(e=>e.value===t)}function r(){try{const t=sessionStorage.getItem(n);return t!==null&&i(t)?t:null}catch{return null}}function a(t){try{sessionStorage.setItem(n,t)}catch{}}export{i,r as l,a as s};

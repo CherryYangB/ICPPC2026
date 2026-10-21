@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 八问：主键与前端 QUESTION_IDS 完全一致（'q1'..'q8'）
+model Question {
+  id        String   @id // q1..q8
+  order     Int      @unique // 1..8
+  topicZh   String
+  topicEn   String
+  titleZh   String
+  titleEn   String
+  color     String // #RRGGBB
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers Answer[]
+}
+
+// 答题记录：字段名与前端 SubmitAnswerRequest 一致
+model Answer {
+  id          String   @id @default(cuid())
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  identityTag String // physician | nurse | ...
+  answer      String // 1..100 字符
+  clientIp    String? // 仅审计，不返回、不广播
+  submittedAt DateTime @default(now())
+
+  @@index([questionId, submittedAt])
+  @@index([identityTag, submittedAt])
+  @@index([clientIp, questionId, submittedAt])
+}
+
+// 机构
+model Institution {
+  id            String   @id @default(cuid())
+  nameZh        String
+  nameEn        String?
+  type          String // hospital | university | ...
+  province      String
+  city          String
+  district      String?
+  address       String?
+  description   String?
+  descriptionEn String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tags InstitutionTagLink[]
+
+  @@index([province, city, district])
+  @@index([type])
+  @@index([nameZh])
+}
+
+// 服务标签（双语，规范化）
+model ServiceTag {
+  id           Int    @id @default(autoincrement())
+  nameZh       String @unique
+  nameEn       String?
+  institutions InstitutionTagLink[]
+}
+
+model InstitutionTagLink {
+  institutionId String
+  tagId         Int
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  tag           ServiceTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([institutionId, tagId])
+  @@index([tagId])
+}

@@ -17,7 +17,8 @@ export async function request<T>(
   })
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`)
+    const message = await readErrorMessage(response)
+    throw new Error(message ?? `Request failed with status ${response.status}`)
   }
 
   return (await response.json()) as T
@@ -26,6 +27,19 @@ export async function request<T>(
 export async function submitAnswer(
   payload: SubmitAnswerRequest,
 ): Promise<SubmitAnswerResponse> {
-  void payload
-  return { success: true }
+  return request<SubmitAnswerResponse>('/answer', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+async function readErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { message?: string | string[] }
+    if (typeof body.message === 'string') return body.message
+    if (Array.isArray(body.message)) return body.message.join('；')
+  } catch {
+    // ignore non-JSON error bodies
+  }
+  return undefined
 }

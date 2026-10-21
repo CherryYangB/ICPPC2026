@@ -45,3 +45,15 @@ export interface SocketMessage<T = unknown> {
   type: string
   payload?: T
 }
+
+// 与后端 WebSocket `newAnswer` 事件负载保持一致
+export interface NewAnswerEvent {
+  id: string
+  questionId: QuestionId
+  questionOrder: number
+  identityTag: IdentityTag
+  identityTagZh: string
+  identityTagEn: string
+  answer: string
+  submittedAt: string
+}

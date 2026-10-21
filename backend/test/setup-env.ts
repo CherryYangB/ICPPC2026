@@ -1,0 +1,10 @@
+// Runs in the Jest worker process before test modules are imported.
+process.env.DATABASE_URL = 'file:./test.db'
+process.env.NODE_ENV = 'test'
+process.env.CORS_ORIGINS = 'http://localhost:5173'
+process.env.SWAGGER_ENABLED = 'false'
+process.env.ANSWER_COOLDOWN_MS = '1000'
+process.env.ANSWER_RATE_LIMIT = '100'
+process.env.ANSWER_RATE_TTL_MS = '60000'
+process.env.GLOBAL_RATE_LIMIT = '1000'
+process.env.GLOBAL_RATE_TTL_MS = '60000'
