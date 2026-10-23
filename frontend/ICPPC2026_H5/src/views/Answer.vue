@@ -12,7 +12,7 @@ import {
   getRemainingCooldown,
   markSubmitted,
 } from '@/shared/submitGuard'
-import { loadIdentityTag, saveIdentityTag } from '@/shared/session'
+import { clearDraft, loadDraft, loadIdentityTag, saveDraft } from '@/shared/session'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,7 +30,7 @@ const copy = {
   helperZh: '演示投稿 · 最多 100 字词',
   helperEn: 'Demo post · Max 100 characters',
   identityLabelZh: '您的身份',
-  identityLabelEn: 'Your identity',
+  identityEdit: '修改身份',
   privacyZh: '请勿填写儿童姓名、联系方式、病历等个人医疗信息。',
   privacyEn: "Do not include children's names, contact details, medical records or other personal medical information.",
   submitZh: '提交审核',
@@ -56,8 +56,13 @@ const orderLabel = computed(() =>
   card.value ? String(card.value.order).padStart(2, '0') : '',
 )
 
-const answerText = ref('')
+const answerText = ref(card.value ? loadDraft(card.value.id) : '')
 const identityTag = ref<IdentityTag>(loadIdentityTag() ?? 'physician')
+const identityOption = computed(
+  () =>
+    IDENTITY_OPTIONS.find((option) => option.value === identityTag.value) ??
+    IDENTITY_OPTIONS[0],
+)
 const submitting = ref(false)
 const errorMessage = ref('')
 const cooldownRemaining = ref(0)
@@ -74,17 +79,21 @@ const cooldownMessage = computed(() => {
   return `请在 ${seconds} 秒后再提交 / Please wait ${seconds}s before submitting again.`
 })
 
-function selectIdentity(tag: IdentityTag): void {
-  identityTag.value = tag
-  saveIdentityTag(tag)
-}
-
 function handleBack(): void {
   if (window.history.state?.back) {
     router.back()
   } else {
     void router.push({ name: ROUTE_NAMES.Questions })
   }
+}
+
+function handleEditIdentity(): void {
+  const id = card.value?.id
+  if (!id) return
+  void router.push({
+    name: ROUTE_NAMES.Home,
+    query: { from: 'answer', questionId: id },
+  })
 }
 
 function handleTextareaFocus(): void {
@@ -94,8 +103,11 @@ function handleTextareaFocus(): void {
   }, 300)
 }
 
-function clearError(): void {
+function handleInput(event: Event): void {
   errorMessage.value = ''
+  const id = card.value?.id
+  if (!id) return
+  saveDraft(id, (event.target as HTMLTextAreaElement).value)
 }
 
 function syncKeyboardOffset(): void {
@@ -159,6 +171,7 @@ async function handleSubmit(): Promise<void> {
   }
 
   markSubmitted(id)
+  clearDraft(id)
   void router.replace({ name: ROUTE_NAMES.Success, params: { questionId: id } })
 }
 
@@ -186,7 +199,7 @@ watch(
       void router.replace({ name: ROUTE_NAMES.Questions })
       return
     }
-    answerText.value = ''
+    answerText.value = card.value ? loadDraft(card.value.id) : ''
     errorMessage.value = ''
     stopCooldown()
   },
@@ -242,28 +255,14 @@ watch(
       </section>
 
       <section class="identity">
-        <p class="field-label">
-          <span class="field-label__zh">{{ copy.identityLabelZh }}</span>
-          <span class="field-label__en">{{ copy.identityLabelEn }}</span>
+        <p class="identity__text">
+          <span class="identity__label">{{ copy.identityLabelZh }}：</span>
+          <span class="identity__value-zh">{{ identityOption.zh }}</span>
+          <span class="identity__value-en">· {{ identityOption.en }}</span>
         </p>
-        <div
-          class="identity__scroller"
-          role="group"
-          :aria-label="`${copy.identityLabelZh} / ${copy.identityLabelEn}`"
-        >
-          <button
-            v-for="option in IDENTITY_OPTIONS"
-            :key="option.value"
-            type="button"
-            class="identity-chip"
-            :class="{ 'identity-chip--active': identityTag === option.value }"
-            :aria-pressed="identityTag === option.value"
-            @click="selectIdentity(option.value)"
-          >
-            <span class="identity-chip__zh">{{ option.zh }}</span>
-            <span class="identity-chip__en">{{ option.en }}</span>
-          </button>
-        </div>
+        <button type="button" class="identity__edit" @click="handleEditIdentity">
+          {{ copy.identityEdit }}
+        </button>
       </section>
 
       <section class="field">
@@ -283,7 +282,7 @@ watch(
           maxlength="100"
           aria-required="true"
           @focus="handleTextareaFocus"
-          @input="clearError"
+          @input="handleInput"
         ></textarea>
         <p class="field__helper">
           {{ copy.helperZh }}<span class="field__helper-sep">/</span>{{ copy.helperEn }}
@@ -511,7 +510,55 @@ watch(
 }
 
 .identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: 18px;
+}
+
+.identity__text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.identity__value-en {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.identity__edit {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--blue);
+  background: transparent;
+  border: 1px solid #cfe2fb;
+  border: 1px solid color-mix(in srgb, var(--blue) 35%, #ffffff);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.identity__edit:active {
+  background: #edf4fe;
+  background: color-mix(in srgb, var(--blue) 10%, #ffffff);
+}
+
+.identity__edit:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .field-label {
@@ -535,64 +582,6 @@ watch(
   color: var(--blue);
 }
 
-.identity__scroller {
-  display: flex;
-  gap: 8px;
-  margin: 8px -20px 0;
-  padding: 2px 20px 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
-}
-
-.identity__scroller::-webkit-scrollbar {
-  display: none;
-}
-
-.identity-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  flex: 0 0 auto;
-  white-space: nowrap;
-  scroll-snap-align: start;
-  padding: 8px 13px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  background: #ffffff;
-  border: 1.5px solid var(--border);
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.identity-chip__en {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-.identity-chip--active {
-  border-color: var(--accent);
-  background: #f4f8fd;
-  background: color-mix(in srgb, var(--accent) 12%, #ffffff);
-}
-
-.identity-chip:active {
-  transform: scale(0.97);
-}
-
-.identity-chip:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
 .field {
   margin-top: 18px;
 }
@@ -742,7 +731,7 @@ watch(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .identity-chip,
+  .identity__edit,
   .field__textarea,
   .footer-btn {
     transition: none;

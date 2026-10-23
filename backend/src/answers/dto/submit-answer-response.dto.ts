@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class SubmitAnswerResponseDto {
   @ApiProperty({ example: true })
-  success: boolean
+  success!: boolean
 
   @ApiPropertyOptional({ example: 'q4' })
   nextQuestionId?: string

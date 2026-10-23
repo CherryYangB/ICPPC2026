@@ -28,7 +28,7 @@ import type { NewAnswerEvent } from './events'
 })
 export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server
+  server!: Server
 
   private readonly logger = new Logger(AnswersGateway.name)
   private readonly screenToken: string

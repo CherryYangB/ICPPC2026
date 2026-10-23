@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { IDENTITY_OPTIONS, ROUTE_NAMES } from '@/shared/constants'
 import type { IdentityTag } from '@/shared/constants'
 import { isIdentityTag, loadIdentityTag, saveIdentityTag } from '@/shared/session'
 
+const route = useRoute()
 const router = useRouter()
 
 const copy = {
@@ -39,10 +40,17 @@ const consent = ref(true)
 
 const canStart = computed(() => consent.value)
 
+function applyRole(tag: IdentityTag): void {
+  selectedRole.value = tag
+  if (route.query.from === 'answer') {
+    saveIdentityTag(tag)
+  }
+}
+
 function onSelectRole(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
   if (isIdentityTag(value)) {
-    selectedRole.value = value
+    applyRole(value)
   }
 }
 
@@ -53,6 +61,21 @@ function handleBack(): void {
 async function handleGetStarted(): Promise<void> {
   if (!consent.value) return
   saveIdentityTag(selectedRole.value)
+
+  const returnQuestionId = route.query.questionId
+  if (
+    route.query.from === 'answer' &&
+    typeof returnQuestionId === 'string' &&
+    returnQuestionId.length > 0
+  ) {
+    // Came from the answer page — swap Home out of history and go straight back.
+    await router.replace({
+      name: ROUTE_NAMES.Answer,
+      params: { questionId: returnQuestionId },
+    })
+    return
+  }
+
   await router.push({ name: ROUTE_NAMES.Questions })
 }
 </script>
@@ -148,7 +171,7 @@ async function handleGetStarted(): Promise<void> {
             type="button"
             class="role-quick__item"
             :class="{ 'role-quick__item--active': selectedRole === option.value }"
-            @click="selectedRole = option.value"
+            @click="applyRole(option.value)"
           >
             <span class="role-quick__dot" aria-hidden="true"></span>
             <span class="role-quick__zh">{{ option.zh }}</span>
