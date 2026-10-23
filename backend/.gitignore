@@ -7,7 +7,7 @@ coverage/
 *.tsbuildinfo
 
 # environment
-.env
+.env.example
 .env.*.local
 
 # database
