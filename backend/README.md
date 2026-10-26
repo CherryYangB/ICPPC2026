@@ -62,6 +62,39 @@ npm run start:dev                    # http://localhost:3000/api
 
 > 若 npm 官方源较慢，可追加 `--registry=https://registry.npmmirror.com`。
 
+## 服务器部署与数据初始化
+
+`prisma/*.db` 被 `.gitignore` 忽略，**服务器上的数据库不会随代码同步**。只拉代码 + 构建
+不建表不播种时，`GET /api/questions` 返回空数组，`POST /api/answer` 会返回：
+
+```json
+{ "statusCode": 404, "message": "题目不存在或已下线", "error": "Not Found" }
+```
+
+首次部署（或重建数据库后）务必在服务器执行：
+
+```bash
+cd backend
+npm ci                        # seed 依赖 tsx，需包含 devDependencies
+npx prisma migrate deploy     # 建表/应用迁移，不写入数据
+npm run prisma:seed           # 写入 8 道题目、服务标签与示例机构（可重复执行）
+npm run build && npm run start:prod
+```
+
+也可以一条命令完成迁移 + 播种：
+
+```bash
+npm run prisma:deploy
+```
+
+验证（应返回 8 条题目）：
+
+```bash
+curl -s http://localhost:3000/api/questions
+```
+
+> 应用启动时若检测到 `Question` 表为空或不可用，会在日志中输出错误提示，便于快速定位。
+
 ## API 端点
 
 | 方法 | 路径 | 说明 |
