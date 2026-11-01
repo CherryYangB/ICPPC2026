@@ -3,13 +3,13 @@ import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import type { Institution } from '@/types/institution'
 
 /** 机构类型筛选口径（与后端 hasWard/hasClinic 对齐） */
-export const TYPE_FILTER_OPTIONS = ['合作病房', '舒缓门诊'] as const
+export const TYPE_FILTER_OPTIONS = ['安宁疗护病房', '舒缓门诊'] as const
 
 export type InstitutionTypeFilter = (typeof TYPE_FILTER_OPTIONS)[number]
 
 /** 机构是否命中某个类型口径；多选时取并集（具备任一所选类型即可） */
 const matchesType = (institution: Institution, type: InstitutionTypeFilter): boolean =>
-  type === '合作病房' ? Boolean(institution.hasWard) : Boolean(institution.hasClinic)
+  type === '安宁疗护病房' ? Boolean(institution.hasWard) : Boolean(institution.hasClinic)
 
 /**
  * 左侧筛选面板状态与过滤逻辑。

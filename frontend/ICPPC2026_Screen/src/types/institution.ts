@@ -16,12 +16,16 @@ export interface Institution {
   longitude: number
   /** 纬度 */
   latitude: number
-  /** 展示用类型标签（由 hasWard/hasClinic 推导，如「合作病房」「舒缓门诊」） */
+  /** 展示用类型标签（由 hasWard/hasClinic 推导，如「安宁疗护病房」「舒缓门诊」） */
   type: string
   /** 是否具备合作病房（类型筛选用） */
   hasWard?: boolean
   /** 是否具备舒缓门诊（类型筛选用） */
   hasClinic?: boolean
+  /** 合作病房项目列表（展开详情逐条列出） */
+  wardProjects?: string[]
+  /** 舒缓门诊科室列表（展开详情逐条列出） */
+  clinicDepartments?: string[]
   /** 机构英文名（抽屉卡片副标题，可选） */
   nameEn?: string
   /** 详细地址（抽屉卡片摘要，可选） */
@@ -32,4 +36,14 @@ export interface Institution {
   description?: string
   /** 是否已点亮（后端 isLit，可用于发光态渲染） */
   isLit?: boolean
+}
+
+/** 后端 WebSocket 事件 checkin 的负载（与 backend InstitutionCheckinEvent 一致） */
+export interface CheckinEvent {
+  institutionId: number
+  province: string
+  city: string
+  nameZh: string
+  litInstitutions: number
+  litProvinces: number
 }

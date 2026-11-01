@@ -1,12 +1,17 @@
      <script lang="ts">
-import { ScatterChart, type ScatterSeriesOption } from 'echarts/charts'
+import {
+  EffectScatterChart,
+  ScatterChart,
+  type EffectScatterSeriesOption,
+  type ScatterSeriesOption,
+} from 'echarts/charts'
 import { GeoComponent, type GeoComponentOption } from 'echarts/components'
 import { getMap, init, registerMap, use, type ComposeOption, type ECharts, type ECElementEvent } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 
-use([GeoComponent, ScatterChart, CanvasRenderer])
+use([GeoComponent, ScatterChart, EffectScatterChart, CanvasRenderer])
 
-type MapOption = ComposeOption<GeoComponentOption | ScatterSeriesOption>
+type MapOption = ComposeOption<GeoComponentOption | ScatterSeriesOption | EffectScatterSeriesOption>
 type BubbleSeriesOption = ScatterSeriesOption & { show?: boolean }
 type GeoJsonSource = Parameters<typeof registerMap>[1]
 </script>
@@ -16,8 +21,15 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { useGeoAggregation, type CityBubble, type GeoLevel, type ProvinceBubble } from '@/composables/useGeoAggregation'
 import { TYPE_FILTER_OPTIONS, useInstitutionFilters } from '@/composables/useInstitutionFilters'
-import { MOCK_INSTITUTIONS } from '@/mocks/institutions'
-import type { Institution } from '@/types/institution'
+import { useSocket } from '@/composables/useSocket'
+import {
+  fetchCheckedInInstitutions,
+  fetchInstitutions,
+  fetchInstitutionStats,
+  toInstitution,
+  type InstitutionStats,
+} from '@/shared/api'
+import type { CheckinEvent, Institution } from '@/types/institution'
 
 const DESIGN_WIDTH = 1920
 const DESIGN_HEIGHT = 1080
@@ -49,8 +61,12 @@ const mapStatus = ref<'loading' | 'ready' | 'error'>('loading')
 const drawerScope = ref<DrawerScope | null>(null)
 const drawerOpen = computed(() => drawerScope.value !== null)
 
-// TODO: 接入真实数据源后替换 mock 数据
-const institutions = ref<Institution[]>(MOCK_INSTITUTIONS)
+/** 机构全量列表（来自后端），所有筛选在前端派生 */
+const institutions = ref<Institution[]>([])
+/** 数据加载状态：loading → skeleton，ready → 内容，error → 重试 */
+const dataStatus = ref<'loading' | 'ready' | 'error'>('loading')
+/** 后端统计（机构总量 + 已点亮省市） */
+const stats = ref<InstitutionStats | null>(null)
 
 const {
   selectedTypes,
@@ -64,10 +80,104 @@ const {
 
 const { provinceBubbles, cityBubbles } = useGeoAggregation(filteredInstitutions)
 
+// ---- 打卡（已点亮）联动状态 ----
+/** checkin 后强化涟漪持续时长 */
+const CHECKIN_HIGHLIGHT_MS = 3000
+/** toast 停留时长 */
+const TOAST_DURATION_MS = 2600
+/** KPI 数字递增时长 */
+const STAT_COUNT_MS = 300
+
+/** 已点亮机构，用于派生省/市常驻涟漪 */
+const litInstitutions = computed(() => institutions.value.filter((inst) => inst.isLit))
+const { provinceBubbles: litProvinceBubbles, cityBubbles: litCityBubbles } = useGeoAggregation(litInstitutions)
+
+/** 3 秒强化涟漪目标（仅当前层级可见时放大变色） */
+const activeLitProvince = ref<string | null>(null)
+const activeLitCityKey = ref<string | null>(null)
+let activeLitTimer: number | undefined
+
+const clearActiveLit = () => {
+  if (activeLitTimer !== undefined) {
+    window.clearTimeout(activeLitTimer)
+    activeLitTimer = undefined
+  }
+}
+
+const startActiveLit = (province: string, city: string) => {
+  clearActiveLit()
+  activeLitProvince.value = province
+  activeLitCityKey.value = province + '::' + city
+  activeLitTimer = window.setTimeout(() => {
+    activeLitTimer = undefined
+    activeLitProvince.value = null
+    activeLitCityKey.value = null
+  }, CHECKIN_HIGHLIGHT_MS)
+}
+
+/** 右上角轻量 toast */
+interface ToastItem {
+  id: number
+  text: string
+}
+const toasts = ref<ToastItem[]>([])
+let toastSeq = 0
+const toastTimers = new Map<number, number>()
+
+const pushToast = (text: string) => {
+  const id = ++toastSeq
+  toasts.value = [...toasts.value, { id, text }]
+  const timer = window.setTimeout(() => {
+    toasts.value = toasts.value.filter((toast) => toast.id !== id)
+    toastTimers.delete(id)
+  }, TOAST_DURATION_MS)
+  toastTimers.set(id, timer)
+}
+
+/** KPI 数字 300ms 递增 */
+const displayLitProvinces = ref(0)
+const displayLitInstitutions = ref(0)
+let litProvinceFrame: number | undefined
+let litInstitutionFrame: number | undefined
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+const animateNumber = (target: { value: number }, to: number, which: 'province' | 'institution') => {
+  const from = target.value
+  const startedAt = window.performance.now()
+  const currentFrame = which === 'province' ? litProvinceFrame : litInstitutionFrame
+  if (currentFrame !== undefined) {
+    window.cancelAnimationFrame(currentFrame)
+  }
+
+  const step = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / STAT_COUNT_MS)
+    target.value = Math.round(from + (to - from) * easeOutCubic(progress))
+    if (progress < 1) {
+      const frame = window.requestAnimationFrame(step)
+      if (which === 'province') litProvinceFrame = frame
+      else litInstitutionFrame = frame
+    } else if (which === 'province') {
+      litProvinceFrame = undefined
+    } else {
+      litInstitutionFrame = undefined
+    }
+  }
+
+  const frame = window.requestAnimationFrame(step)
+  if (which === 'province') litProvinceFrame = frame
+  else litInstitutionFrame = frame
+}
+
+const animateLitStats = (litProvinces: number, litInstitutionCount: number) => {
+  animateNumber(displayLitProvinces, litProvinces, 'province')
+  animateNumber(displayLitInstitutions, litInstitutionCount, 'institution')
+}
+
 const statusItems = computed(() => [
   { label: '已收录机构数', value: String(filteredInstitutions.value.length) },
-  { label: '已点亮省份数', value: String(provinceBubbles.value.length) },
-  { label: '在线打卡人数', value: '1,280' },
+  { label: '已点亮省份数', value: String(displayLitProvinces.value) },
+  { label: '在线打卡人数', value: String(displayLitInstitutions.value) },
 ])
 
 const provinceMenuOpen = ref(false)
@@ -105,6 +215,10 @@ let disposed = false
 
 const PROVINCE_SERIES_ID = 'province-bubbles'
 const CITY_SERIES_ID = 'city-bubbles'
+const LIT_PROVINCE_SERIES_ID = 'lit-province-ripples'
+const LIT_CITY_SERIES_ID = 'lit-city-ripples'
+const LIT_PROVINCE_ACTIVE_SERIES_ID = 'lit-province-active'
+const LIT_CITY_ACTIVE_SERIES_ID = 'lit-city-active'
 const LEVEL_TRANSITION_MS = 300
 
 const PROVINCE_SYMBOL_BASE = 20
@@ -119,6 +233,9 @@ const CITY_SYMBOL_MAX = 44
 // 不同 zlevel = 不同 canvas 层；数值越高越靠上，市级覆盖省级之上避免重叠时点击被遮挡
 const PROVINCE_SERIES_ZLEVEL = 2
 const CITY_SERIES_ZLEVEL = 3
+const LIT_PROVINCE_ZLEVEL = 4
+const LIT_CITY_ZLEVEL = 5
+const LIT_ACTIVE_ZLEVEL = 6
 
 /** 省级气泡直径：Math.min(60, 20 + count * 4)，count 取自 value[2] */
 const provinceSymbolSize = (value: unknown): number => {
@@ -146,6 +263,18 @@ const toCitySeriesData = (bubbles: readonly CityBubble[]) =>
     name: bubble.city,
     value: [bubble.lng, bubble.lat, bubble.count],
     label: { formatter: String(bubble.count) },
+  }))
+
+const toLitProvinceData = (bubbles: readonly ProvinceBubble[]) =>
+  bubbles.map((bubble) => ({
+    name: bubble.province,
+    value: [bubble.lng, bubble.lat, bubble.count],
+  }))
+
+const toLitCityData = (bubbles: readonly CityBubble[]) =>
+  bubbles.map((bubble) => ({
+    name: bubble.city,
+    value: [bubble.lng, bubble.lat, bubble.count],
   }))
 
 const BUBBLE_LABEL: ScatterSeriesOption['label'] = {
@@ -207,6 +336,69 @@ const createCitySeries = (show: boolean): BubbleSeriesOption => ({
   ...bubbleAnimation(),
 })
 
+/** 已点亮常驻涟漪：steady 与 3 秒强化两套节奏 */
+const LIT_RIPPLE = { period: 4, scale: 3, brushType: 'stroke' as const }
+const LIT_ACTIVE_RIPPLE = { period: 1, scale: 6, brushType: 'stroke' as const }
+
+const createLitProvinceSeries = (): EffectScatterSeriesOption => ({
+  id: LIT_PROVINCE_SERIES_ID,
+  type: 'effectScatter',
+  coordinateSystem: 'geo',
+  geoIndex: 0,
+  zlevel: LIT_PROVINCE_ZLEVEL,
+  showEffectOn: 'render',
+  rippleEffect: LIT_RIPPLE,
+  symbolSize: 10,
+  silent: true,
+  label: { show: false },
+  data: [],
+  itemStyle: {
+    color: '#2F80ED',
+    shadowBlur: 12,
+    shadowColor: 'rgba(47, 128, 237, 0.9)',
+  },
+})
+
+const createLitCitySeries = (): EffectScatterSeriesOption => ({
+  id: LIT_CITY_SERIES_ID,
+  type: 'effectScatter',
+  coordinateSystem: 'geo',
+  geoIndex: 0,
+  zlevel: LIT_CITY_ZLEVEL,
+  showEffectOn: 'render',
+  rippleEffect: LIT_RIPPLE,
+  symbolSize: 8,
+  silent: true,
+  label: { show: false },
+  data: [],
+  itemStyle: {
+    color: '#27AE60',
+    shadowBlur: 12,
+    shadowColor: 'rgba(39, 174, 96, 0.9)',
+  },
+})
+
+const createLitActiveSeries = (id: string): EffectScatterSeriesOption => ({
+  id,
+  type: 'effectScatter',
+  coordinateSystem: 'geo',
+  geoIndex: 0,
+  zlevel: LIT_ACTIVE_ZLEVEL,
+  showEffectOn: 'render',
+  rippleEffect: LIT_ACTIVE_RIPPLE,
+  symbolSize: 18,
+  silent: true,
+  label: { show: false },
+  data: [],
+  itemStyle: {
+    color: '#FFC542',
+    borderColor: '#FFE29A',
+    borderWidth: 1,
+    shadowBlur: 26,
+    shadowColor: 'rgba(255, 197, 66, 0.95)',
+  },
+})
+
 /** 从 ECharts geo 组件读取当前缩放级别，驱动 handleZoomChange */
 const syncZoomFromChart = () => {
   const geo = chart?.getOption().geo
@@ -265,6 +457,54 @@ const syncBubbleVisibility = (level: GeoLevel) => {
 }
 
 watch(currentLevel, (level) => syncBubbleVisibility(level))
+
+const activeCityKeyOf = (bubble: CityBubble) => bubble.province + '::' + bubble.city
+
+const resolveActiveProvinceData = () => {
+  if (currentLevel.value !== 'province' || !activeLitProvince.value) {
+    return []
+  }
+  return toLitProvinceData(
+    litProvinceBubbles.value.filter((bubble) => bubble.province === activeLitProvince.value),
+  )
+}
+
+const resolveActiveCityData = () => {
+  if (currentLevel.value !== 'city' || !activeLitCityKey.value) {
+    return []
+  }
+  return toLitCityData(
+    litCityBubbles.value.filter((bubble) => activeCityKeyOf(bubble) === activeLitCityKey.value),
+  )
+}
+
+/** 同步已点亮涟漪 series 的 data（随层级 / 打卡高亮变化） */
+const syncLitSeries = () => {
+  if (!chart) {
+    return
+  }
+  const showProvince = currentLevel.value === 'province'
+  const showCity = currentLevel.value === 'city'
+  chart.setOption({
+    series: [
+      {
+        id: LIT_PROVINCE_SERIES_ID,
+        data: showProvince ? toLitProvinceData(litProvinceBubbles.value) : [],
+      },
+      {
+        id: LIT_CITY_SERIES_ID,
+        data: showCity ? toLitCityData(litCityBubbles.value) : [],
+      },
+      { id: LIT_PROVINCE_ACTIVE_SERIES_ID, data: resolveActiveProvinceData() },
+      { id: LIT_CITY_ACTIVE_SERIES_ID, data: resolveActiveCityData() },
+    ],
+  })
+}
+
+watch(
+  [litProvinceBubbles, litCityBubbles, currentLevel, activeLitProvince, activeLitCityKey],
+  () => syncLitSeries(),
+)
 
 // 筛选变化时按 id 原地更新气泡 data，保留当前层级显隐与动画
 watch([provinceBubbles, cityBubbles], () => {
@@ -370,6 +610,10 @@ const toggleExpanded = (inst: Institution) => {
   const key = institutionKey(inst)
   expandedInstitutionId.value = expandedInstitutionId.value === key ? null : key
 }
+
+/** 是否具备可展开的病房项目 / 门诊科室明细 */
+const hasInstitutionDetails = (inst: Institution): boolean =>
+  Boolean(inst.wardProjects?.length || inst.clinicDepartments?.length)
 watch(drawerScope, () => {
   expandedInstitutionId.value = null
 })
@@ -475,12 +719,106 @@ const renderMap = (geoJson: GeoJsonSource) => {
     series: [
       createProvinceSeries(currentLevel.value === 'province'),
       createCitySeries(currentLevel.value === 'city'),
+      createLitProvinceSeries(),
+      createLitCitySeries(),
+      createLitActiveSeries(LIT_PROVINCE_ACTIVE_SERIES_ID),
+      createLitActiveSeries(LIT_CITY_ACTIVE_SERIES_ID),
     ],
   }
 
   chart.setOption(option)
+  syncLitSeries()
   mapStatus.value = 'ready'
 }
+
+/** 并行拉取机构列表、统计与已点亮列表；失败置 error，供浮动按钮重新触发 */
+let dataRequestId = 0
+const loadInstitutions = async () => {
+  const requestId = ++dataRequestId
+  dataStatus.value = 'loading'
+
+  try {
+    const [list, statsResult, checkedIn] = await Promise.all([
+      fetchInstitutions(),
+      fetchInstitutionStats(),
+      fetchCheckedInInstitutions(),
+    ])
+    if (disposed || requestId !== dataRequestId) {
+      return
+    }
+    const litIds = new Set(checkedIn.map((item) => String(item.id)))
+    institutions.value = list.map((dto) => {
+      const inst = toInstitution(dto)
+      inst.isLit = litIds.has(inst.id ?? '')
+      return inst
+    })
+    stats.value = statsResult
+    animateLitStats(statsResult.litProvinces, statsResult.litInstitutions)
+    dataStatus.value = 'ready'
+  } catch (error) {
+    if (disposed || requestId !== dataRequestId) {
+      return
+    }
+    dataStatus.value = 'error'
+    console.error('[ResourceMap] Failed to load institutions', error)
+  }
+}
+
+/** 重连后重新拉取已点亮列表，并回写 isLit / KPI */
+const refreshCheckedIn = async () => {
+  try {
+    const checkedIn = await fetchCheckedInInstitutions()
+    if (disposed) {
+      return
+    }
+    const litIds = new Set(checkedIn.map((item) => String(item.id)))
+    for (const inst of institutions.value) {
+      inst.isLit = litIds.has(inst.id ?? '')
+    }
+    const provinces = new Set(checkedIn.map((item) => item.province))
+    animateLitStats(provinces.size, checkedIn.length)
+    if (stats.value) {
+      stats.value = { ...stats.value, litProvinces: provinces.size, litInstitutions: checkedIn.length }
+    }
+  } catch (error) {
+    console.error('[ResourceMap] Failed to refresh checked-in institutions', error)
+  }
+}
+
+// ---- WebSocket：checkin 事件 / 断线重连 ----
+const { connected, on: onSocket } = useSocket()
+const hasDisconnected = ref(false)
+const showReconnectBanner = computed(() => hasDisconnected.value && !connected.value)
+
+const handleCheckin = (payload: CheckinEvent) => {
+  const institution = institutions.value.find((inst) => inst.id === String(payload.institutionId))
+  if (institution) {
+    institution.isLit = true
+  }
+
+  startActiveLit(payload.province, payload.city)
+  animateLitStats(payload.litProvinces, payload.litInstitutions)
+  if (stats.value) {
+    stats.value = {
+      ...stats.value,
+      litProvinces: payload.litProvinces,
+      litInstitutions: payload.litInstitutions,
+    }
+  }
+  pushToast(payload.nameZh + ' 已点亮')
+}
+
+onSocket('checkin', handleCheckin)
+
+watch(connected, (value, oldValue) => {
+  if (!value && oldValue) {
+    hasDisconnected.value = true
+  }
+  if (value && !oldValue && hasDisconnected.value) {
+    hasDisconnected.value = false
+    void refreshCheckedIn()
+  }
+})
 
 const loadChinaMap = async () => {
   try {
@@ -516,15 +854,25 @@ onMounted(() => {
   document.addEventListener('pointerdown', handleDocPointerDown)
   document.addEventListener('keydown', handleDocKeyDown)
   void loadChinaMap()
-
-  // TODO: 接入真实数据源后移除；当前用 mock 数据验证聚合结果
-  console.info('[geo] provinceBubbles', provinceBubbles.value)
-  console.info('[geo] cityBubbles', cityBubbles.value)
+  void loadInstitutions()
 })
 
 onBeforeUnmount(() => {
   disposed = true
   clearHideBubblesTimer()
+  clearActiveLit()
+  if (litProvinceFrame !== undefined) {
+    window.cancelAnimationFrame(litProvinceFrame)
+    litProvinceFrame = undefined
+  }
+  if (litInstitutionFrame !== undefined) {
+    window.cancelAnimationFrame(litInstitutionFrame)
+    litInstitutionFrame = undefined
+  }
+  for (const timer of toastTimers.values()) {
+    window.clearTimeout(timer)
+  }
+  toastTimers.clear()
   window.removeEventListener('resize', handleResize)
   document.removeEventListener('pointerdown', handleDocPointerDown)
   document.removeEventListener('keydown', handleDocKeyDown)
@@ -552,6 +900,15 @@ defineExpose({
   provinceOptions,
   hasActiveFilters,
   resetFilters,
+  dataStatus,
+  stats,
+  loadInstitutions,
+  litInstitutions,
+  connected,
+  showReconnectBanner,
+  toasts,
+  handleCheckin,
+  refreshCheckedIn,
   getChartInstance: () => chart,
 })
 </script>
@@ -605,6 +962,7 @@ defineExpose({
                   type="button"
                   class="select-field"
                   :class="{ 'is-selected': selectedProvince }"
+                  :disabled="dataStatus !== 'ready'"
                   :aria-expanded="provinceMenuOpen"
                   aria-haspopup="listbox"
                   @click="provinceMenuOpen = !provinceMenuOpen"
@@ -680,7 +1038,7 @@ defineExpose({
           <div class="map-container">
             <div class="map-heading">
               <h3 class="map-title">中国参与分布</h3>
-              <p class="map-subtitle">Schematic placeholder</p>
+              <p class="map-subtitle">Real-time institution distribution</p>
             </div>
             <p
               v-if="mapStatus !== 'ready'"
@@ -692,9 +1050,19 @@ defineExpose({
               {{ mapFeedback }}
             </p>
             <div ref="mapRef" class="map-canvas"></div>
+            <div v-if="dataStatus !== 'ready'" class="data-overlay" role="status" aria-live="polite">
+              <div v-if="dataStatus === 'loading'" class="map-skeleton" aria-label="数据加载中">
+                <span class="skeleton skeleton-bubble"></span>
+                <span class="skeleton skeleton-line"></span>
+                <span class="skeleton skeleton-line is-short"></span>
+              </div>
+              <button v-else type="button" class="data-retry" @click="loadInstitutions">
+                加载失败，点击重试
+              </button>
+            </div>
             <p class="map-caption">
-              地图与分布仅为占位示意，不代表真实参与地区或机构位置。 / Map and distribution are
-              illustrative placeholders, not actual institution locations.
+              数据来自后端机构库，气泡大小代表该区域收录机构数量。 / Bubble size reflects the
+              number of institutions recorded in each region.
             </p>
           </div>
         </main>
@@ -706,7 +1074,12 @@ defineExpose({
             class="status-item"
             :class="{ 'has-divider': index > 0 }"
           >
-            <span class="status-value">{{ item.value }}</span>
+            <span
+              v-if="dataStatus === 'loading'"
+              class="status-value status-value-skeleton skeleton"
+              aria-hidden="true"
+            ></span>
+            <span v-else class="status-value">{{ dataStatus === 'error' ? '—' : item.value }}</span>
             <span class="status-label">{{ item.label }}</span>
           </div>
         </footer>
@@ -757,21 +1130,48 @@ defineExpose({
                         :aria-expanded="isExpanded(inst)"
                         @click="toggleExpanded(inst)"
                       >
-                        <span class="card-name">{{ inst.name ?? '未命名机构' }}</span>
+                        <span class="card-heading">
+                          <span class="card-name">{{ inst.name ?? '未命名机构' }}</span>
+                          <span v-if="inst.isLit" class="card-lit-badge">
+                            <span class="card-lit-dot" aria-hidden="true"></span>
+                            已点亮
+                          </span>
+                        </span>
                         <span v-if="inst.nameEn" class="card-name-en">{{ inst.nameEn }}</span>
                         <span class="card-meta">
-                          <span class="card-type">{{ inst.type }}</span>
-                          <span class="card-address">{{ inst.address ?? '地址待补充' }}</span>
+                          <span v-if="inst.hasWard" class="card-tag is-ward">安宁疗护病房</span>
+                          <span v-if="inst.hasClinic" class="card-tag is-clinic">舒缓门诊</span>
+                          <span v-if="inst.address" class="card-address">{{ inst.address }}</span>
                         </span>
                       </button>
                       <div v-if="isExpanded(inst)" class="card-detail">
-                        <p class="card-section-label">服务标签</p>
-                        <div class="card-tags">
-                          <span v-for="tag in inst.tags ?? []" :key="tag" class="card-tag">{{ tag }}</span>
-                          <span v-if="!inst.tags?.length" class="card-tag is-empty">暂无</span>
-                        </div>
-                        <p class="card-section-label">机构简介</p>
-                        <p class="card-description">{{ inst.description ?? '暂无简介' }}</p>
+                        <template v-if="inst.wardProjects?.length">
+                          <p class="card-section-label">病房项目</p>
+                          <ul class="card-project-list">
+                            <li
+                              v-for="(project, index) in inst.wardProjects"
+                              :key="'ward-' + index"
+                              class="card-project-item"
+                            >
+                              {{ project }}
+                            </li>
+                          </ul>
+                        </template>
+                        <template v-if="inst.clinicDepartments?.length">
+                          <p class="card-section-label">门诊科室</p>
+                          <ul class="card-project-list">
+                            <li
+                              v-for="(dept, index) in inst.clinicDepartments"
+                              :key="'clinic-' + index"
+                              class="card-project-item"
+                            >
+                              {{ dept }}
+                            </li>
+                          </ul>
+                        </template>
+                        <p v-if="!hasInstitutionDetails(inst)" class="card-detail-empty">
+                          暂无病房 / 门诊明细
+                        </p>
                       </div>
                     </li>
                   </ul>
@@ -781,6 +1181,14 @@ defineExpose({
             </div>
           </Transition>
         </aside>
+
+        <TransitionGroup name="toast" tag="div" class="toast-stack" aria-live="polite">
+          <div v-for="toast in toasts" :key="toast.id" class="toast-item">{{ toast.text }}</div>
+        </TransitionGroup>
+
+        <p v-if="showReconnectBanner" class="reconnect-banner" role="status" aria-live="polite">
+          连接中断，正在重连
+        </p>
       </div>
     </div>
   </div>
@@ -1249,6 +1657,83 @@ defineExpose({
   font-size: 14px;
 }
 
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #16243a 25%, #1d3150 37%, #16243a 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.status-value-skeleton {
+  width: 88px;
+  height: 40px;
+}
+
+.data-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 18, 32, 0.55);
+}
+
+.map-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.skeleton-bubble {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+}
+
+.skeleton-line {
+  width: 260px;
+  height: 16px;
+}
+
+.skeleton-line.is-short {
+  width: 170px;
+}
+
+.data-retry {
+  padding: 14px 26px;
+  border: 1px solid rgba(235, 87, 87, 0.55);
+  border-radius: 10px;
+  background: rgba(17, 28, 46, 0.92);
+  color: #f2a0a0;
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.data-retry:hover {
+  border-color: #eb5757;
+  background: rgba(235, 87, 87, 0.14);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 .detail-drawer {
   position: absolute;
   top: 96px;
@@ -1403,6 +1888,7 @@ defineExpose({
 
 .card-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 2px;
@@ -1467,11 +1953,116 @@ defineExpose({
   line-height: 1.6;
 }
 
+.card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-lit-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border: 1px solid rgba(39, 174, 96, 0.55);
+  border-radius: 999px;
+  background: rgba(39, 174, 96, 0.14);
+  color: #7ee2a8;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.card-lit-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #27ae60;
+  box-shadow: 0 0 6px rgba(39, 174, 96, 0.9);
+}
+
+.card-tag.is-ward {
+  border-color: rgba(47, 128, 237, 0.55);
+  background: rgba(47, 128, 237, 0.16);
+  color: #9cc4ff;
+}
+
+.card-tag.is-clinic {
+  border-color: rgba(39, 174, 96, 0.55);
+  background: rgba(39, 174, 96, 0.14);
+  color: #7ee2a8;
+}
+
+.card-project-list {
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: var(--screen-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.card-project-item {
+  margin: 2px 0;
+}
+
+.card-detail-empty {
+  margin: 6px 0 0;
+  color: var(--screen-text-muted);
+  font-size: 12px;
+}
+
 .drawer-empty {
   margin: 24px 0 0;
   color: var(--screen-text-muted);
   font-size: 13px;
   text-align: center;
+}
+
+.toast-stack {
+  position: absolute;
+  top: 104px;
+  right: 40px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast-item {
+  padding: 10px 16px;
+  border: 1px solid rgba(39, 174, 96, 0.5);
+  border-radius: 8px;
+  background: rgba(17, 28, 46, 0.94);
+  color: #7ee2a8;
+  font-size: 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.reconnect-banner {
+  position: absolute;
+  left: 40px;
+  bottom: 104px;
+  z-index: 60;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid rgba(235, 87, 87, 0.5);
+  border-radius: 8px;
+  background: rgba(17, 28, 46, 0.92);
+  color: #f2a0a0;
+  font-size: 13px;
 }
 
 .drawer-fade-enter-active,

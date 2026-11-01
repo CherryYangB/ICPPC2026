@@ -95,8 +95,8 @@ export function normalizeProvinceName(raw: string): string {
 
 /** 卡片展示用类型标签（由 hasWard/hasClinic 推导） */
 function describeInstitutionType(dto: ApiInstitution): string {
-  if (dto.hasWard && dto.hasClinic) return '合作病房 · 舒缓门诊'
-  if (dto.hasWard) return '合作病房'
+  if (dto.hasWard && dto.hasClinic) return '安宁疗护病房 · 舒缓门诊'
+  if (dto.hasWard) return '安宁疗护病房'
   if (dto.hasClinic) return '舒缓门诊'
   return '其他'
 }
@@ -122,6 +122,8 @@ export function toInstitution(dto: ApiInstitution): Institution {
     type: describeInstitutionType(dto),
     hasWard: dto.hasWard,
     hasClinic: dto.hasClinic,
+    wardProjects: dto.wardProjects,
+    clinicDepartments: dto.clinicDepartments,
     tags: tags.length > 0 ? tags : undefined,
     isLit: dto.isLit,
   }
