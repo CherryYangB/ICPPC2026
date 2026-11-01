@@ -1,0 +1,1168 @@
+[
+  {
+    "province": "安徽",
+    "city": "合肥市",
+    "nameZh": "安徽省儿童医院（深圳路院区）",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "美善安宁小屋合作病房（血液肿瘤科）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 117.2272,
+    "latitude": 31.8206
+  },
+  {
+    "province": "安徽",
+    "city": "合肥市",
+    "nameZh": "安徽省儿童医院（望江路院区）",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "美善安宁小屋合作病房（血液肿瘤科）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 117.2272,
+    "latitude": 31.8206
+  },
+  {
+    "province": "北京",
+    "city": "北京市",
+    "nameZh": "北京松堂关怀医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 116.4074,
+    "latitude": 39.9042
+  },
+  {
+    "province": "北京",
+    "city": "北京市",
+    "nameZh": "北京京都儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房（血液科七病区）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 116.4074,
+    "latitude": 39.9042
+  },
+  {
+    "province": "重庆",
+    "city": "重庆市",
+    "nameZh": "重庆市第十三人民医院黄桷坪院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "拾光小屋合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 106.5516,
+    "latitude": 29.563
+  },
+  {
+    "province": "福建",
+    "city": "福州市",
+    "nameZh": "福州市第一总医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "拾光小屋合作病房（安宁疗护科/儿科）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 119.2965,
+    "latitude": 26.0745
+  },
+  {
+    "province": "福建",
+    "city": "厦门市",
+    "nameZh": "厦门莲花医院莲河总院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 118.0894,
+    "latitude": 24.4798
+  },
+  {
+    "province": "福建",
+    "city": "厦门市",
+    "nameZh": "厦门莲花医院后埔院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 118.0894,
+    "latitude": 24.4798
+  },
+  {
+    "province": "福建",
+    "city": "厦门市",
+    "nameZh": "厦门莲花医院金尚院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 118.0894,
+    "latitude": 24.4798
+  },
+  {
+    "province": "甘肃",
+    "city": "兰州市",
+    "nameZh": "甘肃省人民医院新区分院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "拾光小屋合作病房（疼痛科安宁疗护病区）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 103.8343,
+    "latitude": 36.0611
+  },
+  {
+    "province": "广东",
+    "city": "佛山市",
+    "nameZh": "佛山市禅城永安医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 113.122,
+    "latitude": 23.0288
+  },
+  {
+    "province": "广东",
+    "city": "广州市",
+    "nameZh": "广州市番禺区市桥医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "拾光小屋合作病房（康宁6区——儿童舒缓疗护中心）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 113.2644,
+    "latitude": 23.1291
+  },
+  {
+    "province": "广东",
+    "city": "广州市",
+    "nameZh": "广东三九脑科医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "拾光小屋合作病房"
+    ],
+    "clinicDepartments": [
+      "肿瘤综合诊疗科二区/日间化疗门诊"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 113.2644,
+    "latitude": 23.1291
+  },
+  {
+    "province": "广东",
+    "city": "广州市",
+    "nameZh": "广州市妇女儿童医疗中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "云栖小港（儿童重症监护室）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 113.2644,
+    "latitude": 23.1291
+  },
+  {
+    "province": "广东",
+    "city": "深圳市",
+    "nameZh": "深圳市龙岗区第六人民医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "拾光小屋合作病房"
+    ],
+    "clinicDepartments": [
+      "内科诊区/安宁缓和门诊"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 114.0579,
+    "latitude": 22.5431
+  },
+  {
+    "province": "广东",
+    "city": "深圳市",
+    "nameZh": "深圳市儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "星星航站合作病房（B栋3A层重症医学科）",
+      "拾光小屋合作病房（A栋9层血液肿瘤科三病区）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 114.0579,
+    "latitude": 22.5431
+  },
+  {
+    "province": "广东",
+    "city": "深圳市",
+    "nameZh": "香港大学深圳医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "儿童血液肿瘤科（先门诊咨询评估）"
+    ],
+    "clinicDepartments": [
+      "儿科/儿童血液肿瘤门诊"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 114.0579,
+    "latitude": 22.5431
+  },
+  {
+    "province": "广东",
+    "city": "深圳市",
+    "nameZh": "深圳慈海医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护中心"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 114.0579,
+    "latitude": 22.5431
+  },
+  {
+    "province": "广东",
+    "city": "湛江市",
+    "nameZh": "广东省农垦中心医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "儿科（5号楼一楼）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 110.3594,
+    "latitude": 21.2707
+  },
+  {
+    "province": "河北",
+    "city": "沧州市",
+    "nameZh": "沧州市人民医院（医专肿瘤院区）",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 116.8388,
+    "latitude": 38.3045
+  },
+  {
+    "province": "河南",
+    "city": "郑州市",
+    "nameZh": "郑州市第三人民医院北院区",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "血液二病区/小儿血液肿瘤科"
+    ],
+    "clinicDepartments": [
+      "血液门诊"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 113.6254,
+    "latitude": 34.7466
+  },
+  {
+    "province": "河南",
+    "city": "平顶山市",
+    "nameZh": "平煤神马医疗集团总医院（白鹭院区）",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 113.1926,
+    "latitude": 33.7662
+  },
+  {
+    "province": "湖北",
+    "city": "恩施市",
+    "nameZh": "恩施土家族苗族自治州中心医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 109.4882,
+    "latitude": 30.272
+  },
+  {
+    "province": "湖北",
+    "city": "武汉市",
+    "nameZh": "武汉儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 114.3055,
+    "latitude": 30.5928
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "长沙市儿童福利院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "蝴蝶之家（主要面向重症孤残儿童）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "湖南省儿童医院·福蝶小家",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "蝴蝶之家共建合作病房，第二住院楼6楼"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "湖南省人民医院儿童医学中心/东方红街道社区卫生服务中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "江苏",
+    "city": "南京市",
+    "nameZh": "南京医科大学附属儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "世茂彩虹之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 118.7969,
+    "latitude": 32.0603
+  },
+  {
+    "province": "江西",
+    "city": "南昌市",
+    "nameZh": "江西省肿瘤医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "拾光小屋合作病房（3号楼22楼东病区安宁疗护科/疼痛科）"
+    ],
+    "clinicDepartments": [
+      "安宁疗护科/疼痛科门诊"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 115.8582,
+    "latitude": 28.6829
+  },
+  {
+    "province": "青海",
+    "city": "西宁市",
+    "nameZh": "青海省妇女儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房（8楼血液科）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 101.7782,
+    "latitude": 36.6171
+  },
+  {
+    "province": "山东",
+    "city": "济南市",
+    "nameZh": "山东省肿瘤医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "拾光小屋合作病房（限儿童肿瘤病区内患儿入住）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 117.1201,
+    "latitude": 36.6512
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海交通大学医学院附属上海儿童医学中心张江院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（一）（仅服务本院患儿）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海交通大学医学院附属上海儿童医学中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（二）/重症监护室觉群儿童关怀室（仅服务本院患儿）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "复旦大学附属儿科医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "安宁疗护病房（三）/重症监护室觉群儿童关怀室"
+    ],
+    "clinicDepartments": [
+      "MDT门诊/儿童舒缓治疗MDT"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海市金山区金山卫镇社区卫生服务中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（四）/安宁疗护病区觉群儿童关怀室"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海市普陀区利群医院（普陀区安宁疗护中心）",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（五）/安宁疗护病区觉群儿童关怀室"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海市儿童医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（六）/觉群儿童关怀室（仅服务本院患儿）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海市静安区街道社区卫生服务中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病房（七）/儿童安宁病房（收治5岁以上儿童）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "四川",
+    "city": "成都市",
+    "nameZh": "四川大学华西第四医院",
+    "hasWard": true,
+    "hasClinic": true,
+    "wardProjects": [
+      "姑息医学科（需门诊咨询评估）"
+    ],
+    "clinicDepartments": [
+      "姑息医学科"
+    ],
+    "typeTags": [
+      "ward",
+      "clinic"
+    ],
+    "longitude": 104.0665,
+    "latitude": 30.5728
+  },
+  {
+    "province": "四川",
+    "city": "成都市",
+    "nameZh": "四川泰康医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "儿童安宁疗护病房（南塔楼13楼）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 104.0665,
+    "latitude": 30.5728
+  },
+  {
+    "province": "天津",
+    "city": "天津市",
+    "nameZh": "中国医学科学院血液病医院南京路院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "雏菊之家合作病房"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 117.1902,
+    "latitude": 39.1252
+  },
+  {
+    "province": "云南",
+    "city": "昆明市",
+    "nameZh": "云南新昆华医院",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "缓和医学中心（住院部B栋14-15楼）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 102.8329,
+    "latitude": 24.8801
+  },
+  {
+    "province": "浙江",
+    "city": "杭州市",
+    "nameZh": "浙江大学医学院附属儿童医院莫干山院区",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "拾光小屋合作病房（限儿童肿瘤病区内患儿入住）"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 120.1551,
+    "latitude": 30.2741
+  },
+  {
+    "province": "浙江",
+    "city": "宁波市",
+    "nameZh": "鄞州区中河街道社区卫生服务中心",
+    "hasWard": true,
+    "hasClinic": false,
+    "wardProjects": [
+      "安宁疗护病区"
+    ],
+    "clinicDepartments": [],
+    "typeTags": [
+      "ward"
+    ],
+    "longitude": 121.5503,
+    "latitude": 29.8746
+  },
+  {
+    "province": "广东",
+    "city": "深圳市",
+    "nameZh": "中山大学附属第七医院（线上咨询医生所属）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "疼痛科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 114.0579,
+    "latitude": 22.5431
+  },
+  {
+    "province": "北京",
+    "city": "北京市",
+    "nameZh": "北京儿童医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "血液与舒缓知名专家门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 116.4074,
+    "latitude": 39.9042
+  },
+  {
+    "province": "重庆",
+    "city": "重庆市",
+    "nameZh": "重庆市第十三医院（重庆市老年病医院）黄桷坪院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "安宁疗护科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 106.5516,
+    "latitude": 29.563
+  },
+  {
+    "province": "福建",
+    "city": "福州市",
+    "nameZh": "福建医科大学附属协和医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "小儿血液专科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 119.2965,
+    "latitude": 26.0745
+  },
+  {
+    "province": "福建",
+    "city": "福州市",
+    "nameZh": "福州市第一总医院（儿科门诊第二诊室）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科/小儿专科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 119.2965,
+    "latitude": 26.0745
+  },
+  {
+    "province": "福建",
+    "city": "福州市",
+    "nameZh": "福州市第一总医院（门诊5楼中西医结合肿瘤科、安宁疗护科诊室）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "中西医结合肿瘤科、安宁疗护科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 119.2965,
+    "latitude": 26.0745
+  },
+  {
+    "province": "福建",
+    "city": "福州市",
+    "nameZh": "福州市第一总医院（门诊2楼第8诊室）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 119.2965,
+    "latitude": 26.0745
+  },
+  {
+    "province": "甘肃",
+    "city": "兰州市",
+    "nameZh": "甘肃省人民医院本部",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 103.8343,
+    "latitude": 36.0611
+  },
+  {
+    "province": "甘肃",
+    "city": "兰州市",
+    "nameZh": "兰州市第二人民医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 103.8343,
+    "latitude": 36.0611
+  },
+  {
+    "province": "甘肃",
+    "city": "兰州市",
+    "nameZh": "中山大学附属肿瘤医院甘肃医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "安宁疗护专科护理门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 103.8343,
+    "latitude": 36.0611
+  },
+  {
+    "province": "广东",
+    "city": "广州市",
+    "nameZh": "广州医科大学附属第五医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科/儿童舒缓门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 113.2644,
+    "latitude": 23.1291
+  },
+  {
+    "province": "广东",
+    "city": "广州市",
+    "nameZh": "广州医科大学附属妇女儿童医疗中心（儿童院区）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "专科门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 113.2644,
+    "latitude": 23.1291
+  },
+  {
+    "province": "河北",
+    "city": "沧州市",
+    "nameZh": "沧州市人民医院医专肿瘤院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "安宁疗护病房"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 116.8388,
+    "latitude": 38.3045
+  },
+  {
+    "province": "河南",
+    "city": "郑州市",
+    "nameZh": "河南省儿童医院/郑州儿童医院东区医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "血液门诊",
+      "血液肿瘤门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 113.6254,
+    "latitude": 34.7466
+  },
+  {
+    "province": "黑龙江",
+    "city": "哈尔滨市",
+    "nameZh": "哈尔滨市儿童医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "血液特诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 126.5349,
+    "latitude": 45.8038
+  },
+  {
+    "province": "湖北",
+    "city": "恩施市",
+    "nameZh": "恩施州中心医院金龙院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科诊疗中心"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 109.4882,
+    "latitude": 30.272
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "湖南省人民医院天心阁院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿童血液肿瘤门诊/儿科专家门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "中南大学湘雅医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "中南大学湘雅三医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科门诊部/小儿血液"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "湖南省儿童医院（门诊101、403）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "血液肿瘤科/儿童舒缓安宁门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "湖南",
+    "city": "长沙市",
+    "nameZh": "湖南省儿童医院（二住院楼6楼阳光病房学校）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "护理门诊/儿童舒缓护理门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.9388,
+    "latitude": 28.2282
+  },
+  {
+    "province": "吉林",
+    "city": "长春市",
+    "nameZh": "吉林大学第一医院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "小儿肿瘤/肿瘤病人心理社会康复门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 125.3235,
+    "latitude": 43.8171
+  },
+  {
+    "province": "江苏",
+    "city": "南京市",
+    "nameZh": "南京市儿童医院（河西院区、广州路院区）",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿童安宁疗护专病门诊/血液专科门诊/儿童肿瘤专科门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 118.7969,
+    "latitude": 32.0603
+  },
+  {
+    "province": "江苏",
+    "city": "苏州市",
+    "nameZh": "苏州大学附属儿童医院园区总院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "高级诊疗中心/儿童舒缓治疗多学科门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 120.5853,
+    "latitude": 31.2989
+  },
+  {
+    "province": "山东",
+    "city": "济南市",
+    "nameZh": "山东省立医院中心院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿科门诊/血液门诊"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 117.1201,
+    "latitude": 36.6512
+  },
+  {
+    "province": "山西",
+    "city": "太原市",
+    "nameZh": "山西省儿童医院晋源院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "儿内科门诊/小儿血液"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 112.5489,
+    "latitude": 37.8706
+  },
+  {
+    "province": "上海",
+    "city": "上海市",
+    "nameZh": "上海交通大学医学院附属新华医院崇明分院宁养院",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "宁养院（居家晚期肿瘤患者）"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 121.4737,
+    "latitude": 31.2304
+  },
+  {
+    "province": "浙江",
+    "city": "杭州市",
+    "nameZh": "浙江医院三墩院区",
+    "hasWard": false,
+    "hasClinic": true,
+    "wardProjects": [],
+    "clinicDepartments": [
+      "安宁缓和医疗门诊（临终关怀科"
+    ],
+    "typeTags": [
+      "clinic"
+    ],
+    "longitude": 120.1551,
+    "latitude": 30.2741
+  }
+]

@@ -1,44 +1,26 @@
-import { Transform, Type } from 'class-transformer'
-import { IsArray, IsIn, IsOptional, IsString } from 'class-validator'
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto'
-import { INSTITUTION_TYPES, type InstitutionType } from '../../common/constants/institution-types'
+import { Transform } from 'class-transformer'
+import { IsIn, IsOptional, IsString } from 'class-validator'
 
-export class QueryInstitutionsDto extends PaginationQueryDto {
+/** 机构类型筛选：ward = 有合作病房，clinic = 有舒缓门诊 */
+export const INSTITUTION_TYPE_FILTERS = ['ward', 'clinic'] as const
+export type InstitutionTypeFilter = (typeof INSTITUTION_TYPE_FILTERS)[number]
+
+function trimString({ value }: { value: unknown }): unknown {
+  return typeof value === 'string' ? value.trim() : value
+}
+
+export class QueryInstitutionsDto {
   @IsOptional()
+  @IsIn(INSTITUTION_TYPE_FILTERS)
+  type?: InstitutionTypeFilter
+
+  @IsOptional()
+  @Transform(trimString)
   @IsString()
   province?: string
 
   @IsOptional()
-  @IsString()
-  city?: string
-
-  @IsOptional()
-  @IsString()
-  district?: string
-
-  @IsOptional()
-  @IsIn([...INSTITUTION_TYPES])
-  type?: InstitutionType
-
-  @IsOptional()
+  @Transform(trimString)
   @IsString()
   keyword?: string
-
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null) return undefined
-    const arr = Array.isArray(value) ? value : [value]
-    return arr
-      .flatMap((v) => String(v).split(','))
-      .map((s) => s.trim())
-      .filter(Boolean)
-  })
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[]
-
-  @IsOptional()
-  @Type(() => String)
-  @IsIn(['nameZh', 'createdAt'])
-  sort: 'nameZh' | 'createdAt' = 'nameZh'
 }

@@ -7,4 +7,5 @@ process.env.ANSWER_COOLDOWN_MS = '1000'
 process.env.ANSWER_RATE_LIMIT = '100'
 process.env.ANSWER_RATE_TTL_MS = '60000'
 process.env.GLOBAL_RATE_LIMIT = '1000'
-process.env.GLOBAL_RATE_TTL_MS = '60000'
+process.env.GLOBAL_RATE_TTL_MS = '60000'// 打卡防刷窗口：e2e 里放大，便于稳定断言冷却分支
+process.env.CHECKIN_COOLDOWN_MS = '60000'

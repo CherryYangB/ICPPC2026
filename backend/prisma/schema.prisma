@@ -39,42 +39,28 @@ model Answer {
   @@index([clientIp, questionId, submittedAt])
 }
 
-// 机构
+// 机构：由 backend/scripts/clean-institutions.ts 从 Excel 清洗生成（prisma/seed-data/institutions.json）
 model Institution {
-  id            String   @id @default(cuid())
-  nameZh        String
-  nameEn        String?
-  type          String // hospital | university | ...
-  province      String
-  city          String
-  district      String?
-  address       String?
-  description   String?
-  descriptionEn String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  province          String // 短名，如「广东」「内蒙古」
+  city              String // 保留源表写法，如「深圳市」
+  nameZh            String
+  nameEn            String?
+  hasWard           Boolean  @default(false)
+  hasClinic         Boolean  @default(false)
+  wardProjects      Json     @default("[]")
+  clinicDepartments Json     @default("[]")
+  typeTags          Json     @default("[]") // ['ward'] | ['clinic'] | ['ward','clinic']
+  longitude         Float
+  latitude          Float
+  address           String?
+  description       String?
+  descriptionEn     String?
+  isLit             Boolean  @default(false)
+  litAt             DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  tags InstitutionTagLink[]
-
-  @@index([province, city, district])
-  @@index([type])
-  @@index([nameZh])
-}
-
-// 服务标签（双语，规范化）
-model ServiceTag {
-  id           Int    @id @default(autoincrement())
-  nameZh       String @unique
-  nameEn       String?
-  institutions InstitutionTagLink[]
-}
-
-model InstitutionTagLink {
-  institutionId String
-  tagId         Int
-  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  tag           ServiceTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([institutionId, tagId])
-  @@index([tagId])
+  @@unique([province, city, nameZh])
+  @@index([province])
 }

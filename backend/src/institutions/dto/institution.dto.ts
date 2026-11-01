@@ -1,65 +1,42 @@
 import { ApiProperty } from '@nestjs/swagger'
 
-export class ServiceTagDto {
+export class InstitutionDto {
   @ApiProperty({ example: 1 })
   id!: number
 
-  @ApiProperty({ example: '临床支持' })
-  nameZh!: string
-
-  @ApiProperty({ example: 'Clinical support', nullable: true })
-  nameEn!: string | null
-}
-
-export class InstitutionDto {
-  @ApiProperty()
-  id!: string
-
-  @ApiProperty({ example: '北京协和医院儿科' })
-  nameZh!: string
-
-  @ApiProperty({ example: 'Peking Union Medical College Hospital, Pediatrics', nullable: true })
-  nameEn!: string | null
-
-  @ApiProperty({ example: 'hospital' })
-  type!: string
-
-  @ApiProperty({ example: '医院' })
-  typeZh!: string
-
-  @ApiProperty({ example: 'Hospital' })
-  typeEn!: string
-
-  @ApiProperty({ example: '北京市' })
+  @ApiProperty({ example: '广东' })
   province!: string
 
-  @ApiProperty({ example: '北京市' })
+  @ApiProperty({ example: '深圳市' })
   city!: string
 
-  @ApiProperty({ example: '东城区', nullable: true })
-  district!: string | null
+  @ApiProperty({ example: '深圳市儿童医院' })
+  nameZh!: string
 
-  @ApiProperty({ nullable: true })
-  address!: string | null
+  @ApiProperty({ example: "Shenzhen Children's Hospital", nullable: true })
+  nameEn!: string | null
 
-  @ApiProperty({ nullable: true })
-  description!: string | null
+  @ApiProperty({ example: true })
+  hasWard!: boolean
 
-  @ApiProperty({ nullable: true })
-  descriptionEn!: string | null
+  @ApiProperty({ example: false })
+  hasClinic!: boolean
 
-  @ApiProperty({ type: [ServiceTagDto] })
-  serviceTags!: ServiceTagDto[]
-}
+  @ApiProperty({ type: [String], example: ['星星航站合作病房（B栋3A层重症医学科）'] })
+  wardProjects!: string[]
 
-export interface PaginationMeta {
-  page: number
-  pageSize: number
-  total: number
-  totalPages: number
-}
+  @ApiProperty({ type: [String], example: [] })
+  clinicDepartments!: string[]
 
-export interface InstitutionListResponse {
-  data: InstitutionDto[]
-  meta: PaginationMeta
+  @ApiProperty({ type: [String], example: ['ward', 'clinic'] })
+  typeTags!: string[]
+
+  @ApiProperty({ example: 114.0579 })
+  longitude!: number
+
+  @ApiProperty({ example: 22.5431 })
+  latitude!: number
+
+  @ApiProperty({ example: false })
+  isLit!: boolean
 }

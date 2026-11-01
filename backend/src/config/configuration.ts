@@ -19,4 +19,5 @@ export default () => ({
     },
   },
   answerCooldownMs: Number(process.env.ANSWER_COOLDOWN_MS ?? 30000),
+  checkinCooldownMs: Number(process.env.CHECKIN_COOLDOWN_MS ?? 10000),
 })

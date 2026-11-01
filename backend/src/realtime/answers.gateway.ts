@@ -7,8 +7,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import type { Server, Socket } from 'socket.io'
-import type { NewAnswerEvent } from './events'
+import type { InstitutionCheckinEvent, NewAnswerEvent } from './events'
 
+/** /ws 命名空间的共享网关：newAnswer（答题）与 checkin（机构打卡）都只发给 screens 房间 */
 @WebSocketGateway({
   namespace: '/ws',
   cors: {
@@ -57,5 +58,9 @@ export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   broadcastNewAnswer(payload: NewAnswerEvent): void {
     this.server.to('screens').emit('newAnswer', payload)
+  }
+
+  broadcastCheckin(payload: InstitutionCheckinEvent): void {
+    this.server.to('screens').emit('checkin', payload)
   }
 }

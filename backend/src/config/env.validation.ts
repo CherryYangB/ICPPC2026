@@ -9,5 +9,10 @@ export function validate(config: Record<string, unknown>): Record<string, unknow
     throw new Error(`Invalid ANSWER_COOLDOWN_MS value: ${String(config.ANSWER_COOLDOWN_MS)}`)
   }
 
+  const checkinCooldown = Number(config.CHECKIN_COOLDOWN_MS ?? 10000)
+  if (!Number.isInteger(checkinCooldown) || checkinCooldown < 0) {
+    throw new Error(`Invalid CHECKIN_COOLDOWN_MS value: ${String(config.CHECKIN_COOLDOWN_MS)}`)
+  }
+
   return config
 }

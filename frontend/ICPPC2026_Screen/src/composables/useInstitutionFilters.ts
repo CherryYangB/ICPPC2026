@@ -2,16 +2,14 @@ import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue'
 
 import type { Institution } from '@/types/institution'
 
-/** 机构类型筛选口径（6 类） */
-export const TYPE_FILTER_OPTIONS = ['医院', '儿童福利机构', '社工机构', '基金会', '企业', '其他'] as const
+/** 机构类型筛选口径（与后端 hasWard/hasClinic 对齐） */
+export const TYPE_FILTER_OPTIONS = ['合作病房', '舒缓门诊'] as const
 
 export type InstitutionTypeFilter = (typeof TYPE_FILTER_OPTIONS)[number]
 
-const TYPE_SET: ReadonlySet<string> = new Set<string>(TYPE_FILTER_OPTIONS)
-
-/** 把机构原始 type 归一为筛选口径；未登记类型兜底归入「其他」 */
-export const typeOf = (institution: Institution): InstitutionTypeFilter =>
-  TYPE_SET.has(institution.type) ? (institution.type as InstitutionTypeFilter) : '其他'
+/** 机构是否命中某个类型口径；多选时取并集（具备任一所选类型即可） */
+const matchesType = (institution: Institution, type: InstitutionTypeFilter): boolean =>
+  type === '合作病房' ? Boolean(institution.hasWard) : Boolean(institution.hasClinic)
 
 /**
  * 左侧筛选面板状态与过滤逻辑。
@@ -36,7 +34,7 @@ export function useInstitutionFilters(source: MaybeRefOrGetter<Institution[]>) {
     const query = normalizedKeyword.value
 
     return toValue(source).filter((inst) => {
-      if (types.length > 0 && !types.includes(typeOf(inst))) {
+      if (types.length > 0 && !types.some((type) => matchesType(inst, type))) {
         return false
       }
       if (province && inst.province !== province) {
