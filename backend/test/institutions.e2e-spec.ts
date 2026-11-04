@@ -34,8 +34,11 @@ describe('GET /api/institutions (e2e)', () => {
 
     const first = res.body[0]
     expect(Object.keys(first).sort()).toEqual([
+      'address',
       'city',
       'clinicDepartments',
+      'description',
+      'descriptionEn',
       'hasClinic',
       'hasWard',
       'id',
@@ -138,6 +141,11 @@ describe('GET /api/institutions (e2e)', () => {
 describe('POST /api/institutions/:id/checkin (e2e)', () => {
   let app: INestApplication
   let prisma: PrismaService
+  /** 第一个被点亮的机构（广东），后续用例复用它验证 alreadyLit / 冷却分支 */
+  let firstId: number
+  let firstProvince: string
+  let firstCity: string
+  let firstNameZh: string
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
@@ -157,59 +165,131 @@ describe('POST /api/institutions/:id/checkin (e2e)', () => {
     await app.close()
   })
 
-  it('lights an institution and reports the updated stats', async () => {
+  it('lights an institution and returns the full checkin payload', async () => {
     const target = await prisma.institution.findFirst({
       where: { province: '广东' },
       orderBy: { id: 'asc' },
     })
     expect(target).not.toBeNull()
-    const id = target!.id
+    firstId = target!.id
+    firstProvince = target!.province
+    firstCity = target!.city
+    firstNameZh = target!.nameZh
 
     const res = await request(app.getHttpServer())
-      .post(`/api/institutions/${id}/checkin`)
+      .post(`/api/institutions/${firstId}/checkin`)
       .expect(200)
+
     expect(res.body).toMatchObject({
+      success: true,
       alreadyLit: false,
-      institutionId: id,
+      institutionId: firstId,
+      nameZh: firstNameZh,
+      province: firstProvince,
+      city: firstCity,
       litInstitutions: 1,
       litProvinces: 1,
+      litCities: 1,
     })
     expect(typeof res.body.litAt).toBe('string')
 
-    const stored = await prisma.institution.findUnique({ where: { id } })
+    const stored = await prisma.institution.findUnique({ where: { id: firstId } })
     expect(stored?.isLit).toBe(true)
     expect(stored?.litAt).toBeInstanceOf(Date)
 
     const stats = await request(app.getHttpServer()).get('/api/institutions/stats').expect(200)
-    expect(stats.body.litInstitutions).toBe(1)
-    expect(stats.body.litProvinces).toBe(1)
+    expect(stats.body).toMatchObject({ litInstitutions: 1, litProvinces: 1, litCities: 1 })
 
     const checked = await request(app.getHttpServer())
       .get('/api/institutions/checked-in')
       .expect(200)
     expect(checked.body).toHaveLength(1)
-    expect(checked.body[0].id).toBe(id)
+    expect(checked.body[0].id).toBe(firstId)
   })
 
-  it('returns alreadyLit for an institution that is already lit', async () => {
-    const target = await prisma.institution.findFirst({ where: { isLit: true } })
+  it('counts cities separately inside one province', async () => {
+    const target = await prisma.institution.findFirst({
+      where: { province: firstProvince, isLit: false, NOT: { city: firstCity } },
+      orderBy: { id: 'asc' },
+    })
+    expect(target).not.toBeNull()
+
     const res = await request(app.getHttpServer())
       .post(`/api/institutions/${target!.id}/checkin`)
       .expect(200)
-    expect(res.body).toEqual({ alreadyLit: true })
+
+    // 同省不同城市：省份数不变，城市数 +1
+    expect(res.body).toMatchObject({
+      success: true,
+      alreadyLit: false,
+      litInstitutions: 2,
+      litProvinces: 1,
+      litCities: 2,
+    })
+  })
+
+  it('counts a new province once', async () => {
+    const target = await prisma.institution.findFirst({
+      where: { isLit: false, NOT: { province: firstProvince } },
+      orderBy: { id: 'asc' },
+    })
+    expect(target).not.toBeNull()
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/institutions/${target!.id}/checkin`)
+      .expect(200)
+
+    expect(res.body).toMatchObject({
+      success: true,
+      alreadyLit: false,
+      litInstitutions: 3,
+      litProvinces: 2,
+      litCities: 3,
+    })
+  })
+
+  it('returns alreadyLit with live stats for an already lit institution', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/api/institutions/${firstId}/checkin`)
+      .expect(200)
+
+    // 已点亮：不再广播，但仍返回机构信息与实时统计
+    expect(res.body).toMatchObject({
+      success: true,
+      alreadyLit: true,
+      institutionId: firstId,
+      nameZh: firstNameZh,
+      province: firstProvince,
+      city: firstCity,
+      litInstitutions: 3,
+      litProvinces: 2,
+      litCities: 3,
+    })
+    expect(typeof res.body.litAt).toBe('string')
   })
 
   it('suppresses a second call inside the cooldown window even after isLit was reset', async () => {
-    const target = await prisma.institution.findFirst({ where: { isLit: true } })
-    const id = target!.id
-    await prisma.institution.update({ where: { id }, data: { isLit: false, litAt: null } })
+    await prisma.institution.update({
+      where: { id: firstId },
+      data: { isLit: false, litAt: null },
+    })
 
     const res = await request(app.getHttpServer())
-      .post(`/api/institutions/${id}/checkin`)
+      .post(`/api/institutions/${firstId}/checkin`)
       .expect(200)
-    expect(res.body).toEqual({ alreadyLit: true })
 
-    const stored = await prisma.institution.findUnique({ where: { id } })
+    expect(res.body).toMatchObject({
+      success: true,
+      alreadyLit: true,
+      institutionId: firstId,
+      nameZh: firstNameZh,
+      litInstitutions: 2,
+      litProvinces: 2,
+      litCities: 2,
+    })
+    expect(res.body.litAt).toBeNull()
+
+    const stored = await prisma.institution.findUnique({ where: { id: firstId } })
     expect(stored?.isLit).toBe(false)
   })
 

@@ -28,7 +28,24 @@ export type QuestionId = (typeof QUESTION_IDS)[number]
 
 export const TOTAL_QUESTIONS = 8
 
-export const QUESTION_CARDS = [
+/** 是否属于合法题目 id（接口返回可能被人工改动，做一次白名单校验） */
+export function isQuestionId(value: unknown): value is QuestionId {
+  return typeof value === 'string' && (QUESTION_IDS as readonly string[]).includes(value)
+}
+
+/** 题目卡片结构（与 backend QuestionDto 一致） */
+export interface QuestionCard {
+  id: QuestionId
+  order: number
+  topicZh: string
+  topicEn: string
+  color: string
+  titleZh: string
+  titleEn: string
+}
+
+/** 本地兜底题目：GET /api/questions 失败或返回空时使用（内容与后端 seed 一致） */
+export const QUESTION_CARDS: readonly QuestionCard[] = [
   {
     id: 'q1',
     order: 1,
@@ -101,9 +118,7 @@ export const QUESTION_CARDS = [
     titleZh: '如何从团队协作走向行业协作?',
     titleEn: 'How do we move from team collaboration to sector-wide collaboration?',
   },
-] as const
-
-export type QuestionCard = (typeof QUESTION_CARDS)[number]
+]
 
 export const QUESTION_PAGE_SIZE = 4
 

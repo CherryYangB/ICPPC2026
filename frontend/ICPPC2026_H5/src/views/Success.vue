@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { QUESTION_CARDS, ROUTE_NAMES } from '@/shared/constants'
+import { ROUTE_NAMES } from '@/shared/constants'
+import { questionCards } from '@/shared/questions'
 import { getSubmittedAt } from '@/shared/submitGuard'
 
 const route = useRoute()
@@ -30,7 +31,7 @@ const questionId = computed(() => {
 })
 
 const card = computed(() =>
-  QUESTION_CARDS.find((item) => item.id === questionId.value),
+  questionCards.value.find((item) => item.id === questionId.value),
 )
 
 const accent = computed(() => card.value?.color ?? '#2f80ed')

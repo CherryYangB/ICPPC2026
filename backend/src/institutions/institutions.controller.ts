@@ -34,7 +34,11 @@ export class InstitutionsController {
   @Post(':id/checkin')
   @HttpCode(200)
   @ApiParam({ name: 'id', type: Number, example: 12 })
-  @ApiOkResponse({ type: CheckinResponseDto, description: 'alreadyLit=true 表示已点亮或在 10s 防刷窗口内，未重复广播' })
+  @ApiOkResponse({
+    type: CheckinResponseDto,
+    description:
+      'alreadyLit=true 表示该机构已点亮或处于 10s 防刷窗口内（未重复广播）；两种情况下都返回机构信息与实时统计',
+  })
   checkin(@Param('id', ParseIntPipe) id: number): Promise<CheckinResponseDto> {
     return this.institutionsService.checkin(id)
   }

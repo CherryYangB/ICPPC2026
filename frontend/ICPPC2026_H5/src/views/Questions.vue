@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { QUESTION_CARDS, QUESTION_PAGE_SIZE, ROUTE_NAMES } from '@/shared/constants'
+import { QUESTION_PAGE_SIZE, ROUTE_NAMES } from '@/shared/constants'
+import { questionCards } from '@/shared/questions'
 
 const router = useRouter()
 
@@ -37,7 +38,7 @@ const activeCopy = computed(() => pageCopy[page.value])
 
 const visibleCards = computed(() => {
   const start = (page.value - 1) * QUESTION_PAGE_SIZE
-  return QUESTION_CARDS.slice(start, start + QUESTION_PAGE_SIZE)
+  return questionCards.value.slice(start, start + QUESTION_PAGE_SIZE)
 })
 
 function handleBack(): void {

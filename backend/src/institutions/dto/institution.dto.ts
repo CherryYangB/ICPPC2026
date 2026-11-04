@@ -16,6 +16,15 @@ export class InstitutionDto {
   @ApiProperty({ example: "Shenzhen Children's Hospital", nullable: true })
   nameEn!: string | null
 
+  @ApiProperty({ example: '深圳市福田区益田路7019号', nullable: true })
+  address!: string | null
+
+  @ApiProperty({ example: '国家儿童区域医疗中心，儿童舒缓安宁疗护试点单位。', nullable: true })
+  description!: string | null
+
+  @ApiProperty({ example: 'National Children’s Regional Medical Center.', nullable: true })
+  descriptionEn!: string | null
+
   @ApiProperty({ example: true })
   hasWard!: boolean
 

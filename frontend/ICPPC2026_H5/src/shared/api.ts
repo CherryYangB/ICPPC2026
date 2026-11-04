@@ -1,4 +1,4 @@
-import type { SubmitAnswerRequest, SubmitAnswerResponse } from './types'
+import type { ApiQuestion, SubmitAnswerRequest, SubmitAnswerResponse } from './types'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
@@ -31,6 +31,11 @@ export async function submitAnswer(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+/** 题目列表（后端按 order 升序返回裸数组，带 ETag / Cache-Control） */
+export function fetchQuestions(): Promise<ApiQuestion[]> {
+  return request<ApiQuestion[]>('/questions')
 }
 
 async function readErrorMessage(response: Response): Promise<string | undefined> {

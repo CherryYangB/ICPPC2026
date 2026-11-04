@@ -92,23 +92,25 @@ export class InstitutionsService {
 
   /**
    * 机构打卡：isLit = true + litAt = now。
-   * 已点亮 / 10s 防刷窗口内 / 并发抢占失败 → alreadyLit（不广播）。
+   * 已点亮 / 10s 防刷窗口内 / 并发抢占失败 → alreadyLit（不广播），
+   * 但同样返回机构信息与实时统计，前端据此提示「已点亮」并刷新 KPI。
    */
   async checkin(id: number): Promise<CheckinResponseDto> {
-    const now = Date.now()
-    const last = this.lastCheckinAt.get(id)
-    if (last !== undefined && now - last < this.checkinCooldownMs) {
-      return { alreadyLit: true }
-    }
-
     const institution = await this.prisma.institution.findUnique({ where: { id } })
     if (!institution) {
       throw new NotFoundException('机构不存在')
     }
 
-    if (institution.isLit) {
+    const now = Date.now()
+    const last = this.lastCheckinAt.get(id)
+    const cooling = last !== undefined && now - last < this.checkinCooldownMs
+
+    // 已点亮 / 10s 防刷窗口内：不广播（避免多屏重复触发发光动画），但仍返回实时统计
+    if (cooling || institution.isLit) {
       this.lastCheckinAt.set(id, now)
-      return { alreadyLit: true }
+      const stats = await this.getStats()
+      const event = this.toCheckinEvent(institution, stats)
+      return this.buildCheckinResponse(event, true, institution.litAt)
     }
 
     const litAt = new Date()
@@ -117,36 +119,56 @@ export class InstitutionsService {
       data: { isLit: true, litAt },
     })
     if (updated.count === 0) {
-      // 并发下已被其它请求点亮，避免重复广播
+      // 并发下已被其它请求点亮：同样不广播
       this.lastCheckinAt.set(id, now)
-      return { alreadyLit: true }
+      const stats = await this.getStats()
+      const event = this.toCheckinEvent(institution, stats)
+      return this.buildCheckinResponse(event, true, institution.litAt)
     }
 
     const stats = await this.getStats()
-    const payload: InstitutionCheckinEvent = {
-      institutionId: institution.id,
-      province: institution.province,
-      city: institution.city,
-      nameZh: institution.nameZh,
-      litInstitutions: stats.litInstitutions,
-      litProvinces: stats.litProvinces,
-    }
+    // REST 响应与 WS 广播共用同一份字段，保证两边逐字段一致
+    const event = this.toCheckinEvent(institution, stats)
 
     try {
-      this.gateway.broadcastCheckin(payload)
+      this.gateway.broadcastCheckin(event)
     } catch (err) {
       this.logger.error('Failed to broadcast checkin', err instanceof Error ? err.stack : String(err))
     }
 
     this.lastCheckinAt.set(id, now)
 
+    return this.buildCheckinResponse(event, false, litAt)
+  }
+
+  /**
+   * REST 响应与 WS 广播共用的业务字段（唯一数据源）。
+   * 广播只在首次点亮时发生，因此这里的 alreadyLit 恒为 false，由调用方按需覆盖。
+   */
+  private toCheckinEvent(
+    institution: Institution,
+    stats: InstitutionStatsDto,
+  ): InstitutionCheckinEvent {
     return {
+      success: true,
       alreadyLit: false,
       institutionId: institution.id,
-      litAt: litAt.toISOString(),
+      nameZh: institution.nameZh,
+      province: institution.province,
+      city: institution.city,
       litInstitutions: stats.litInstitutions,
       litProvinces: stats.litProvinces,
+      litCities: stats.litCities,
     }
+  }
+
+  /** 打卡响应统一结构：首次点亮 / 已点亮 / 冷却中都能拿到机构信息与实时统计 */
+  private buildCheckinResponse(
+    event: InstitutionCheckinEvent,
+    alreadyLit: boolean,
+    litAt: Date | null,
+  ): CheckinResponseDto {
+    return { ...event, alreadyLit, litAt: litAt ? litAt.toISOString() : null }
   }
 
   private toDto(row: Institution): InstitutionDto {
@@ -156,6 +178,9 @@ export class InstitutionsService {
       city: row.city,
       nameZh: row.nameZh,
       nameEn: row.nameEn,
+      address: row.address,
+      description: row.description,
+      descriptionEn: row.descriptionEn,
       hasWard: row.hasWard,
       hasClinic: row.hasClinic,
       wardProjects: toArray(row.wardProjects),

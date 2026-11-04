@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  IDENTITY_OPTIONS,
-  QUESTION_CARDS,
-  ROUTE_NAMES,
-} from '@/shared/constants'
+import { IDENTITY_OPTIONS, ROUTE_NAMES } from '@/shared/constants'
 import type { IdentityTag, QuestionId } from '@/shared/constants'
 import { submitAnswer } from '@/shared/api'
+import { questionCards } from '@/shared/questions'
 import {
   getRemainingCooldown,
   markSubmitted,
@@ -48,7 +45,7 @@ const questionId = computed(() => {
 })
 
 const card = computed(() =>
-  QUESTION_CARDS.find((item) => item.id === questionId.value),
+  questionCards.value.find((item) => item.id === questionId.value),
 )
 
 const accent = computed(() => card.value?.color ?? '#2f80ed')
@@ -135,6 +132,16 @@ function startCooldownCountdown(remainingMs: number, id: QuestionId): void {
   }, 1000)
 }
 
+/** 后端错误体已带中文 message（如限流「提交过于频繁，请稍后再试」）；网络类错误回退通用文案 */
+function resolveSubmitError(error: unknown): string {
+  const message = error instanceof Error ? error.message : ''
+  if (!message) return copy.failError
+  const isNetworkError = /^(Request failed with status|Failed to fetch|NetworkError|Load failed)/i.test(
+    message,
+  )
+  return isNetworkError ? copy.failError : message
+}
+
 async function handleSubmit(): Promise<void> {
   if (submitting.value) return
   const id = card.value?.id
@@ -164,8 +171,8 @@ async function handleSubmit(): Promise<void> {
     if (!result.success) {
       throw new Error('Submit failed')
     }
-  } catch {
-    errorMessage.value = copy.failError
+  } catch (error) {
+    errorMessage.value = resolveSubmitError(error)
     submitting.value = false
     return
   }

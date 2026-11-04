@@ -190,7 +190,7 @@ pm2 save && pm2 startup
 | --- | --- | --- |
 | `GET` | `/api/health` | 健康检查（含 DB 探活） |
 | `GET` | `/api/questions` | 返回八问裸数组（`QuestionCard` 结构，带 ETag / Cache-Control） |
-| `GET` | `/api/institutions` | 机构全量列表（裸数组），支持 `type`(`ward`/`clinic`)、`province`、`keyword` 叠加筛选 |
+| `GET` | `/api/institutions` | 机构全量列表（裸数组），支持 `type`(`ward`/`clinic`)、`province`、`keyword` 叠加筛选；含 `address` / `description` / `descriptionEn` |
 | `GET` | `/api/institutions/stats` | 机构统计 `{ totalInstitutions, litInstitutions, litProvinces, litCities }` |
 | `GET` | `/api/institutions/checked-in` | 已点亮（`isLit = true`）机构，供大屏初始化发光状态 |
 | `POST` | `/api/answer` | 提交答题，请求体 `{ questionId, identityTag, answer }` |
@@ -201,6 +201,29 @@ pm2 save && pm2 startup
 ```json
 { "success": true, "nextQuestionId": "q4", "completed": false }
 ```
+
+`POST /api/institutions/:id/checkin` 返回机构信息 + 实时统计（大屏打卡按钮直接消费）：
+
+```json
+{
+  "success": true,
+  "alreadyLit": false,
+  "institutionId": 12,
+  "nameZh": "深圳市儿童医院",
+  "province": "广东",
+  "city": "深圳市",
+  "litInstitutions": 8,
+  "litProvinces": 5,
+  "litCities": 7,
+  "litAt": "2026-11-01T09:48:26.000Z"
+}
+```
+
+- `alreadyLit: true`：该机构之前已点亮（或处于 10s 防刷窗口内），不会重复广播，但**同样返回机构信息与当前统计**，
+  前端据此提示「已点亮」。
+- `litInstitutions` = `isLit = true` 的机构总数（打卡家数）；`litProvinces` / `litCities` = 已点亮机构所在省份 / 城市去重数。
+- `litAt`：已点亮时为库中时间，首次点亮为本次时间，冷却 / 并发抢占分支为 `null`。
+- 机构不存在返回 `404`（「机构不存在」），`:id` 非数字返回 `400`。
 
 错误统一为 `{ statusCode, message, error, timestamp, path }`；冷却/限流返回 `429`
 并携带 `Retry-After` 头。
@@ -227,18 +250,24 @@ pm2 save && pm2 startup
 }
 ```
 
-`checkin` 负载（打卡成功后广播，用于点亮大屏气泡并刷新 KPI）：
+`checkin` 负载（**仅首次点亮时广播**，用于点亮大屏气泡并刷新 KPI；`alreadyLit` 的重复打卡不广播）：
 
 ```json
 {
+  "success": true,
+  "alreadyLit": false,
   "institutionId": 12,
+  "nameZh": "深圳市儿童医院",
   "province": "广东",
   "city": "深圳市",
-  "nameZh": "深圳市儿童医院",
   "litInstitutions": 8,
-  "litProvinces": 5
+  "litProvinces": 5,
+  "litCities": 7
 }
 ```
+
+> 字段与 `POST /api/institutions/:id/checkin` 的响应对应（不含 `litAt`）；因为只在首次点亮时广播，
+> `alreadyLit` 恒为 `false`。已点亮 / 10s 防刷窗口内 / 并发抢占失败都不会广播，避免多屏重复触发发光动画。
 
 ## 测试
 
@@ -251,13 +280,25 @@ npm run typecheck # 纯类型检查
 
 ## 前端集成
 
-前端 `src/shared/api.ts` 的 `submitAnswer` 已切换为真实 `POST /api/answer`；
-`src/shared/socket.ts` 已切换为 `socket.io-client`（`createScreenSocket` /
-`subscribeNewAnswer`）；`vite.config.ts` 已添加 `/api` 与 `/socket.io`（含 `ws: true`）
-的开发代理，均指向 `http://localhost:3000`。
+两端都用 `src/shared/api.ts` 里的 `request()` 统一处理 `{ statusCode, message }` 错误体，
+并在 `vite.config.ts` 里把 `/api` 与 `/socket.io`（`ws: true`）代理到 `http://localhost:3000`，
+因此开发期同源、不依赖 CORS。
+
+| 前端 | 已接接口 |
+| --- | --- |
+| H5（5173） | `GET /api/questions`（启动时预取，失败/为空回退本地 `QUESTION_CARDS`）、`POST /api/answer` |
+| 大屏（5174，`base: '/screen/'`） | `GET /api/institutions`、`/stats`、`/checked-in`、`POST /api/institutions/:id/checkin`、Socket `/ws` 的 `checkin` 事件 |
+
+说明：
+
+- H5 是观众端，不订阅 `screens` 房间，因此没有 socket 客户端代码。
+- 大屏握手 `auth: { role: 'screen', token? }`；后端配置 `SCREEN_TOKEN` 时通过构建变量
+  `VITE_SCREEN_TOKEN` 注入。
+- 生产同域部署：nginx 需同时处理 `/api`、`/socket.io`（Upgrade）与 `/screen/` 静态目录
+  （地图 JSON 在 `/screen/maps/china.json`）。
 
 ## SQLite 说明
 
-- 不使用枚举，改用 `String` + 应用层白名单校验（`identities.ts` / `institution-types.ts`）。
-- 不使用标量数组，标签关系用 `InstitutionTagLink` 关联表。
+- 不使用枚举，改用 `String` + 应用层白名单校验（`identities.ts` / `query-institutions.dto.ts`）。
+- 不使用标量数组，标签直接用 `Json` 列（`wardProjects` / `clinicDepartments` / `typeTags`）。
 - 启动时设置 `PRAGMA journal_mode=WAL` 与 `busy_timeout=5000` 以支持并发写入。

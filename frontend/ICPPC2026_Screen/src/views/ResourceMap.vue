@@ -17,12 +17,13 @@ type GeoJsonSource = Parameters<typeof registerMap>[1]
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 import { useGeoAggregation, type CityBubble, type GeoLevel, type ProvinceBubble } from '@/composables/useGeoAggregation'
 import { TYPE_FILTER_OPTIONS, useInstitutionFilters } from '@/composables/useInstitutionFilters'
 import { useSocket } from '@/composables/useSocket'
 import {
+  checkinInstitution,
   fetchCheckedInInstitutions,
   fetchInstitutions,
   fetchInstitutionStats,
@@ -30,6 +31,8 @@ import {
   type InstitutionStats,
 } from '@/shared/api'
 import type { CheckinEvent, Institution } from '@/types/institution'
+
+import CheckinSuccessModal from '@/components/CheckinSuccessModal.vue'
 
 const DESIGN_WIDTH = 1920
 const DESIGN_HEIGHT = 1080
@@ -84,12 +87,34 @@ const { provinceBubbles, cityBubbles } = useGeoAggregation(filteredInstitutions)
 /** checkin 后强化涟漪持续时长 */
 const CHECKIN_HIGHLIGHT_MS = 3000
 /** toast 停留时长 */
-const TOAST_DURATION_MS = 2600
+const TOAST_DURATION_MS = 3000
 /** KPI 数字递增时长 */
 const STAT_COUNT_MS = 300
 
+/** 已点亮机构 id 集合（按钮 / 点位样式的唯一来源） */
+const litInstitutionIds = reactive(new Set<string>())
+
+const isInstitutionLit = (inst: Institution): boolean =>
+  inst.id ? litInstitutionIds.has(inst.id) : Boolean(inst.isLit)
+
+/** 用后端列表整体重建（初始化 / 重连） */
+const syncLitIds = (ids: Iterable<string>) => {
+  litInstitutionIds.clear()
+  for (const id of ids) litInstitutionIds.add(id)
+  for (const inst of institutions.value) {
+    inst.isLit = inst.id ? litInstitutionIds.has(inst.id) : false
+  }
+}
+
+/** 单机构点亮（本地打卡 / WS 事件） */
+const markInstitutionLit = (id: string) => {
+  if (!litInstitutionIds.has(id)) litInstitutionIds.add(id)
+  const inst = institutions.value.find((item) => item.id === id)
+  if (inst) inst.isLit = true
+}
+
 /** 已点亮机构，用于派生省/市常驻涟漪 */
-const litInstitutions = computed(() => institutions.value.filter((inst) => inst.isLit))
+const litInstitutions = computed(() => institutions.value.filter((inst) => isInstitutionLit(inst)))
 const { provinceBubbles: litProvinceBubbles, cityBubbles: litCityBubbles } = useGeoAggregation(litInstitutions)
 
 /** 3 秒强化涟漪目标（仅当前层级可见时放大变色） */
@@ -116,17 +141,19 @@ const startActiveLit = (province: string, city: string) => {
 }
 
 /** 右上角轻量 toast */
+type ToastKind = 'success' | 'error'
 interface ToastItem {
   id: number
   text: string
+  kind: ToastKind
 }
 const toasts = ref<ToastItem[]>([])
 let toastSeq = 0
 const toastTimers = new Map<number, number>()
 
-const pushToast = (text: string) => {
+const pushToast = (text: string, kind: ToastKind = 'success') => {
   const id = ++toastSeq
-  toasts.value = [...toasts.value, { id, text }]
+  toasts.value = [...toasts.value, { id, text, kind }]
   const timer = window.setTimeout(() => {
     toasts.value = toasts.value.filter((toast) => toast.id !== id)
     toastTimers.delete(id)
@@ -179,6 +206,98 @@ const statusItems = computed(() => [
   { label: '已点亮省份数', value: String(displayLitProvinces.value) },
   { label: '在线打卡人数', value: String(displayLitInstitutions.value) },
 ])
+
+/** 打卡按钮：请求中的机构 id 集合 */
+const checkingInIds = reactive(new Set<string>())
+/** 本地刚发起的打卡 id（抑制自身 WS toast，避免与弹窗重复） */
+const selfCheckinIds = reactive(new Set<string>())
+let selfCheckinTimer: number | undefined
+
+const rememberSelfCheckin = (id: string) => {
+  selfCheckinIds.add(id)
+  if (selfCheckinTimer !== undefined) {
+    window.clearTimeout(selfCheckinTimer)
+  }
+  selfCheckinTimer = window.setTimeout(() => {
+    selfCheckinTimer = undefined
+    selfCheckinIds.clear()
+  }, 10000)
+}
+
+const clearSelfCheckin = () => {
+  if (selfCheckinTimer !== undefined) {
+    window.clearTimeout(selfCheckinTimer)
+    selfCheckinTimer = undefined
+  }
+  selfCheckinIds.clear()
+}
+
+/** 卡片按钮三态：唯一入口（class / disabled / 文案同源） */
+type CardCheckinState = 'idle' | 'checking' | 'lit'
+
+const cardCheckinState = (inst: Institution): CardCheckinState => {
+  if (isInstitutionLit(inst)) return 'lit'
+  if (inst.id && checkingInIds.has(inst.id)) return 'checking'
+  return 'idle'
+}
+/** 打卡成功弹窗状态（快照，与抽屉/筛选无关） */
+const checkinSuccess = reactive({
+  visible: false,
+  institutionId: '',
+  institutionName: '',
+  litProvinces: 0,
+  litInstitutions: 0,
+})
+
+const openCheckinSuccess = (institution: Institution, litProvinces: number, litInstitutions: number) => {
+  checkinSuccess.institutionId = institution.id ?? ''
+  checkinSuccess.institutionName = institution.name ?? '未命名机构'
+  checkinSuccess.litProvinces = litProvinces
+  checkinSuccess.litInstitutions = litInstitutions
+  checkinSuccess.visible = true
+}
+
+const closeCheckinSuccess = () => {
+  checkinSuccess.visible = false
+}
+
+const handleCheckinClick = async (inst: Institution) => {
+  if (!inst.id || cardCheckinState(inst) !== 'idle') {
+    return
+  }
+  checkingInIds.add(inst.id)
+  rememberSelfCheckin(inst.id)
+
+  try {
+    const response = await checkinInstitution(Number(inst.id))
+    markInstitutionLit(inst.id)
+
+    // 计数优先用后端返回的实时统计；?? 兜底用于前端先于后端发布的过渡期
+    const litList = institutions.value.filter((item) => isInstitutionLit(item))
+    const litProvinces = response.litProvinces ?? new Set(litList.map((item) => item.province)).size
+    const litInstitutions = response.litInstitutions ?? litList.length
+    const litCities =
+      response.litCities ?? stats.value?.litCities ?? new Set(litList.map((item) => item.city)).size
+
+    animateLitStats(litProvinces, litInstitutions)
+    if (stats.value) {
+      stats.value = { ...stats.value, litProvinces, litInstitutions, litCities }
+    }
+
+    const institutionName = response.nameZh || inst.name || '未命名机构'
+    if (response.alreadyLit) {
+      // 已点亮 / 10s 防刷窗口内：后端不再广播，这里只提示，不弹「打卡成功」
+      pushToast(institutionName + ' 已点亮')
+    } else {
+      openCheckinSuccess({ ...inst, name: institutionName }, litProvinces, litInstitutions)
+    }
+  } catch (error) {
+    console.error('[ResourceMap] Failed to checkin institution', error)
+    pushToast('打卡失败，请重试', 'error')
+  } finally {
+    checkingInIds.delete(inst.id)
+  }
+}
 
 const provinceMenuOpen = ref(false)
 const selectWrapRef = ref<HTMLElement | null>(null)
@@ -348,14 +467,16 @@ const createLitProvinceSeries = (): EffectScatterSeriesOption => ({
   zlevel: LIT_PROVINCE_ZLEVEL,
   showEffectOn: 'render',
   rippleEffect: LIT_RIPPLE,
-  symbolSize: 10,
+  symbolSize: 14,
   silent: true,
   label: { show: false },
   data: [],
   itemStyle: {
-    color: '#2F80ED',
-    shadowBlur: 12,
-    shadowColor: 'rgba(47, 128, 237, 0.9)',
+    color: '#F2C94C',
+    borderColor: '#FFE29A',
+    borderWidth: 1,
+    shadowBlur: 18,
+    shadowColor: 'rgba(242, 201, 76, 0.9)',
   },
 })
 
@@ -367,14 +488,16 @@ const createLitCitySeries = (): EffectScatterSeriesOption => ({
   zlevel: LIT_CITY_ZLEVEL,
   showEffectOn: 'render',
   rippleEffect: LIT_RIPPLE,
-  symbolSize: 8,
+  symbolSize: 12,
   silent: true,
   label: { show: false },
   data: [],
   itemStyle: {
-    color: '#27AE60',
-    shadowBlur: 12,
-    shadowColor: 'rgba(39, 174, 96, 0.9)',
+    color: '#F2C94C',
+    borderColor: '#FFE29A',
+    borderWidth: 1,
+    shadowBlur: 18,
+    shadowColor: 'rgba(242, 201, 76, 0.9)',
   },
 })
 
@@ -747,11 +870,8 @@ const loadInstitutions = async () => {
       return
     }
     const litIds = new Set(checkedIn.map((item) => String(item.id)))
-    institutions.value = list.map((dto) => {
-      const inst = toInstitution(dto)
-      inst.isLit = litIds.has(inst.id ?? '')
-      return inst
-    })
+    institutions.value = list.map((dto) => toInstitution(dto))
+    syncLitIds(litIds)
     stats.value = statsResult
     animateLitStats(statsResult.litProvinces, statsResult.litInstitutions)
     dataStatus.value = 'ready'
@@ -771,10 +891,7 @@ const refreshCheckedIn = async () => {
     if (disposed) {
       return
     }
-    const litIds = new Set(checkedIn.map((item) => String(item.id)))
-    for (const inst of institutions.value) {
-      inst.isLit = litIds.has(inst.id ?? '')
-    }
+    syncLitIds(checkedIn.map((item) => String(item.id)))
     const provinces = new Set(checkedIn.map((item) => item.province))
     animateLitStats(provinces.size, checkedIn.length)
     if (stats.value) {
@@ -791,10 +908,8 @@ const hasDisconnected = ref(false)
 const showReconnectBanner = computed(() => hasDisconnected.value && !connected.value)
 
 const handleCheckin = (payload: CheckinEvent) => {
-  const institution = institutions.value.find((inst) => inst.id === String(payload.institutionId))
-  if (institution) {
-    institution.isLit = true
-  }
+  const id = String(payload.institutionId)
+  markInstitutionLit(id)
 
   startActiveLit(payload.province, payload.city)
   animateLitStats(payload.litProvinces, payload.litInstitutions)
@@ -803,9 +918,12 @@ const handleCheckin = (payload: CheckinEvent) => {
       ...stats.value,
       litProvinces: payload.litProvinces,
       litInstitutions: payload.litInstitutions,
+      litCities: payload.litCities ?? stats.value.litCities,
     }
   }
-  pushToast(payload.nameZh + ' 已点亮')
+  if (!selfCheckinIds.has(id)) {
+    pushToast(payload.nameZh + ' 已点亮')
+  }
 }
 
 onSocket('checkin', handleCheckin)
@@ -861,6 +979,7 @@ onBeforeUnmount(() => {
   disposed = true
   clearHideBubblesTimer()
   clearActiveLit()
+  clearSelfCheckin()
   if (litProvinceFrame !== undefined) {
     window.cancelAnimationFrame(litProvinceFrame)
     litProvinceFrame = undefined
@@ -904,10 +1023,16 @@ defineExpose({
   stats,
   loadInstitutions,
   litInstitutions,
+  litInstitutionIds,
+  isInstitutionLit,
   connected,
   showReconnectBanner,
   toasts,
   handleCheckin,
+  handleCheckinClick,
+  checkinSuccess,
+  openCheckinSuccess,
+  closeCheckinSuccess,
   refreshCheckedIn,
   getChartInstance: () => chart,
 })
@@ -1124,26 +1249,38 @@ defineExpose({
                       class="institution-card"
                       :class="{ 'is-expanded': isExpanded(inst) }"
                     >
-                      <button
-                        type="button"
-                        class="card-summary"
-                        :aria-expanded="isExpanded(inst)"
-                        @click="toggleExpanded(inst)"
-                      >
-                        <span class="card-heading">
-                          <span class="card-name">{{ inst.name ?? '未命名机构' }}</span>
-                          <span v-if="inst.isLit" class="card-lit-badge">
-                            <span class="card-lit-dot" aria-hidden="true"></span>
-                            已点亮
+                      <div class="card-row">
+                        <button
+                          type="button"
+                          class="card-summary"
+                          :aria-expanded="isExpanded(inst)"
+                          @click="toggleExpanded(inst)"
+                        >
+                          <span class="card-heading">
+                            <span class="card-name">{{ inst.name ?? '未命名机构' }}</span>
+                            <span v-if="isInstitutionLit(inst)" class="card-lit-badge">
+                              <span class="card-lit-dot" aria-hidden="true"></span>
+                              已点亮
+                            </span>
                           </span>
-                        </span>
-                        <span v-if="inst.nameEn" class="card-name-en">{{ inst.nameEn }}</span>
-                        <span class="card-meta">
-                          <span v-if="inst.hasWard" class="card-tag is-ward">安宁疗护病房</span>
-                          <span v-if="inst.hasClinic" class="card-tag is-clinic">舒缓门诊</span>
-                          <span v-if="inst.address" class="card-address">{{ inst.address }}</span>
-                        </span>
-                      </button>
+                          <span v-if="inst.nameEn" class="card-name-en">{{ inst.nameEn }}</span>
+                          <span class="card-meta">
+                            <span v-if="inst.hasWard" class="card-tag is-ward">安宁疗护病房</span>
+                            <span v-if="inst.hasClinic" class="card-tag is-clinic">舒缓门诊</span>
+                            <span v-if="inst.address" class="card-address">{{ inst.address }}</span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          class="card-checkin"
+                          :class="{ 'is-lit': cardCheckinState(inst) === 'lit', 'is-loading': cardCheckinState(inst) === 'checking' }"
+                          :disabled="cardCheckinState(inst) !== 'idle'"
+                          @click.stop="handleCheckinClick(inst)"
+                        >
+                          <span v-if="cardCheckinState(inst) === 'checking'" class="checkin-spinner" aria-hidden="true"></span>
+                          <span>{{ cardCheckinState(inst) === 'lit' ? '已点亮' : cardCheckinState(inst) === 'checking' ? '打卡中' : '打卡点亮' }}</span>
+                        </button>
+                      </div>
                       <div v-if="isExpanded(inst)" class="card-detail">
                         <template v-if="inst.wardProjects?.length">
                           <p class="card-section-label">病房项目</p>
@@ -1183,12 +1320,27 @@ defineExpose({
         </aside>
 
         <TransitionGroup name="toast" tag="div" class="toast-stack" aria-live="polite">
-          <div v-for="toast in toasts" :key="toast.id" class="toast-item">{{ toast.text }}</div>
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast-item"
+            :class="{ 'is-error': toast.kind === 'error' }"
+          >
+            {{ toast.text }}
+          </div>
         </TransitionGroup>
 
         <p v-if="showReconnectBanner" class="reconnect-banner" role="status" aria-live="polite">
           连接中断，正在重连
         </p>
+
+        <CheckinSuccessModal
+          :visible='checkinSuccess.visible'
+          :institution-name='checkinSuccess.institutionName'
+          :lit-provinces='checkinSuccess.litProvinces'
+          :lit-institutions='checkinSuccess.litInstitutions'
+          @close='closeCheckinSuccess'
+        />
       </div>
     </div>
   </div>
@@ -1876,6 +2028,73 @@ defineExpose({
   cursor: pointer;
 }
 
+.card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.card-row .card-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-checkin {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  min-width: 104px;
+  margin: 12px 14px 0 0;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-checkin:hover:not(:disabled) {
+  background: #4a93f5;
+  box-shadow: 0 0 16px rgba(47, 128, 237, 0.75);
+  transform: translateY(-1px);
+}
+
+.card-checkin:disabled {
+  cursor: not-allowed;
+}
+
+.card-checkin.is-lit {
+  background: rgba(170, 180, 196, 0.16);
+  border-color: var(--line-strong);
+  color: var(--screen-text-muted);
+}
+
+.card-checkin.is-loading {
+  opacity: 0.85;
+}
+
+.checkin-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: checkin-spin 0.8s linear infinite;
+}
+
+@keyframes checkin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .card-name {
   font-size: 15px;
   font-weight: 600;
@@ -2038,6 +2257,11 @@ defineExpose({
   color: #7ee2a8;
   font-size: 14px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+}
+
+.toast-item.is-error {
+  border-color: rgba(235, 87, 87, 0.55);
+  color: #f2a0a0;
 }
 
 .toast-enter-active,

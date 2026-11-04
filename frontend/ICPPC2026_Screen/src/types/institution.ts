@@ -38,12 +38,19 @@ export interface Institution {
   isLit?: boolean
 }
 
-/** 后端 WebSocket 事件 checkin 的负载（与 backend InstitutionCheckinEvent 一致） */
+/**
+ * 后端 WebSocket 事件 checkin 的负载（与 backend InstitutionCheckinEvent 一致）。
+ * 字段与 POST /institutions/:id/checkin 的响应对应（不含 litAt）；
+ * 仅「首次点亮」时广播，alreadyLit 恒为 false，重复打卡不会触发。
+ */
 export interface CheckinEvent {
+  success: boolean
+  alreadyLit: boolean
   institutionId: number
+  nameZh: string
   province: string
   city: string
-  nameZh: string
   litInstitutions: number
   litProvinces: number
+  litCities: number
 }

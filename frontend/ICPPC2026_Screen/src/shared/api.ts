@@ -15,6 +15,12 @@ export interface ApiInstitution {
   city: string
   nameZh: string
   nameEn: string | null
+  /** 详细地址（后端 Institution.address） */
+  address: string | null
+  /** 机构简介（中文） */
+  description: string | null
+  /** 机构简介（英文） */
+  descriptionEn: string | null
   hasWard: boolean
   hasClinic: boolean
   wardProjects: string[]
@@ -79,6 +85,25 @@ export function fetchCheckedInInstitutions(): Promise<ApiInstitution[]> {
   return request<ApiInstitution[]>('/institutions/checked-in')
 }
 
+/** 打卡响应（与 backend CheckinResponseDto 一致；alreadyLit=true 时同样返回实时统计） */
+export interface CheckinResponse {
+  success: boolean
+  alreadyLit: boolean
+  institutionId: number
+  nameZh: string
+  province: string
+  city: string
+  litInstitutions: number
+  litProvinces: number
+  litCities: number
+  litAt?: string | null
+}
+
+/** 机构打卡：点亮机构；已点亮 / 防刷窗口内返回 alreadyLit=true */
+export function checkinInstitution(id: number): Promise<CheckinResponse> {
+  return request<CheckinResponse>('/institutions/' + id + '/checkin', { method: 'POST' })
+}
+
 const PROVINCE_SUFFIXES = ['特别行政区', '维吾尔自治区', '壮族自治区', '回族自治区', '自治区', '省', '市']
 
 /** 省份短名归一：广东省 → 广东；内蒙古自治区 → 内蒙古。与后端 normalizeProvince 一致 */
@@ -115,6 +140,8 @@ export function toInstitution(dto: ApiInstitution): Institution {
     id: String(dto.id),
     name: dto.nameZh,
     nameEn: dto.nameEn ?? undefined,
+    address: dto.address ?? undefined,
+    description: dto.description ?? undefined,
     province: normalizeProvinceName(dto.province),
     city: dto.city,
     longitude: dto.longitude,
