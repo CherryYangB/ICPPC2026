@@ -815,8 +815,8 @@ const renderMap = (geoJson: GeoJsonSource) => {
     geo: {
       map: MAP_NAME,
       roam: true,
-      left: 24,
-      right: 24,
+      left: 170,
+      right: 170,
       top: 56,
       bottom: 48,
       label: {
