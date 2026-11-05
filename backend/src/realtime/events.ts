@@ -1,12 +1,17 @@
+/** 答题弹幕广播负载（不含任何客户端 IP） */
 export interface NewAnswerEvent {
-  id: string
   questionId: string
-  questionOrder: number
   identityTag: string
-  identityTagZh: string
-  identityTagEn: string
   answer: string
-  submittedAt: string
+  /** 提交时间，ISO 字符串 */
+  timestamp: string
+}
+
+/** 词云更新广播负载：由 WordcloudScheduler 节流广播（每 5 秒最多一次/问题） */
+export interface WordCloudUpdateEvent {
+  questionId: string
+  words: Array<{ word: string; count: number }>
+  timestamp: string
 }
 
 /**

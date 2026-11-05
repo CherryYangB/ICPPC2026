@@ -7,9 +7,15 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import type { Server, Socket } from 'socket.io'
-import type { InstitutionCheckinEvent, NewAnswerEvent } from './events'
+import type { InstitutionCheckinEvent, NewAnswerEvent, WordCloudUpdateEvent } from './events'
 
-/** /ws 命名空间的共享网关：newAnswer（答题）与 checkin（机构打卡）都只发给 screens 房间 */
+/**
+ * /ws 命名空间的共享网关：
+ * - newAnswer：答题弹幕（立即广播）
+ * - wordCloudUpdate：词云更新（由 WordcloudScheduler 每 5 秒节流广播）
+ * - checkin：机构打卡（仅首次点亮时广播）
+ * 三者都只发给 screens 房间。
+ */
 @WebSocketGateway({
   namespace: '/ws',
   cors: {
@@ -57,10 +63,27 @@ export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   broadcastNewAnswer(payload: NewAnswerEvent): void {
+    if (!this.server) return
     this.server.to('screens').emit('newAnswer', payload)
   }
 
+  /** 词云更新：由 WordcloudScheduler 节流调用（每 5 秒最多一次/问题） */
+  broadcastWordCloudUpdate(
+    questionId: string,
+    words: Array<{ word: string; count: number }>,
+  ): void {
+    if (!this.server) return
+
+    const payload: WordCloudUpdateEvent = {
+      questionId,
+      words,
+      timestamp: new Date().toISOString(),
+    }
+    this.server.to('screens').emit('wordCloudUpdate', payload)
+  }
+
   broadcastCheckin(payload: InstitutionCheckinEvent): void {
+    if (!this.server) return
     this.server.to('screens').emit('checkin', payload)
   }
 }

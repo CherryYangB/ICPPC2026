@@ -3,6 +3,10 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      { "include": "wordcloud/*.txt", "watchAssets": true },
+      { "include": "wordcloud/*.json", "watchAssets": true }
+    ]
   }
 }

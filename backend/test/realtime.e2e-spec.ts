@@ -5,6 +5,7 @@ import { io, type Socket } from 'socket.io-client'
 import { AppModule } from '../src/app.module'
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter'
 import { PrismaService } from '../src/prisma/prisma.service'
+import { WordcloudScheduler } from '../src/wordcloud/wordcloud.scheduler'
 
 describe('WebSocket newAnswer (e2e)', () => {
   let app: INestApplication
@@ -68,19 +69,8 @@ describe('WebSocket newAnswer (e2e)', () => {
   }
 
   it('broadcasts newAnswer to a screen client', async () => {
-    const socket = io(`${baseUrl}/ws`, {
-      transports: ['websocket'],
-      auth: { role: 'screen' },
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      socket.on('connect', () => resolve())
-      socket.on('connect_error', (err) => reject(err))
-    })
-
-    const eventPromise = new Promise<Record<string, unknown>>((resolve) => {
-      socket.on('newAnswer', (payload) => resolve(payload as Record<string, unknown>))
-    })
+    const socket = await connectScreen()
+    const eventPromise = nextEvent(socket, 'newAnswer')
 
     const res = await fetch(`${baseUrl}/api/answer`, {
       method: 'POST',
@@ -90,14 +80,50 @@ describe('WebSocket newAnswer (e2e)', () => {
     expect(res.status).toBe(201)
 
     const payload = await eventPromise
+    // 弹幕最小字段集：与 backend NewAnswerEvent 完全一致
+    expect(Object.keys(payload).sort()).toEqual(['answer', 'identityTag', 'questionId', 'timestamp'])
     expect(payload).toMatchObject({
       questionId: 'q3',
       identityTag: 'nurse',
       answer: '实时测试',
     })
+    expect(typeof payload.timestamp).toBe('string')
     expect(payload).not.toHaveProperty('clientIp')
-    expect(payload).toHaveProperty('identityTagZh')
-    expect(payload).toHaveProperty('identityTagEn')
+
+    socket.close()
+  })
+
+  it('broadcasts wordCloudUpdate after the scheduler flush', async () => {
+    const scheduler = app.get(WordcloudScheduler)
+    const socket = await connectScreen()
+
+    const eventPromise = new Promise<Record<string, unknown>>((resolve) => {
+      socket.on('wordCloudUpdate', (payload: Record<string, unknown>) => {
+        // 后台 @Interval 可能先广播其它问题，只关心本次的 q4
+        if (payload.questionId === 'q4') resolve(payload)
+      })
+    })
+
+    const res = await fetch(`${baseUrl}/api/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 'q4', identityTag: 'nurse', answer: '安宁疗护与居家照护' }),
+    })
+    expect(res.status).toBe(201)
+
+    // 不等 5 秒：直接让调度器消费脏集合
+    await scheduler.flush()
+
+    const payload = await eventPromise
+    expect(Object.keys(payload).sort()).toEqual(['questionId', 'timestamp', 'words'])
+    expect(payload.questionId).toBe('q4')
+    expect(typeof payload.timestamp).toBe('string')
+    expect(payload.words).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ word: '舒缓疗护' }),
+        expect.objectContaining({ word: '居家照护' }),
+      ]),
+    )
 
     socket.close()
   })

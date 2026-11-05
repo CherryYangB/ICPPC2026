@@ -24,7 +24,8 @@ backend/
 │   │   └── institutions.json  # 清洗产物（72 家机构）
 │   └── migrations/
 ├── scripts/
-│   └── clean-institutions.ts  # Excel → seed-data 清洗脚本（tsx）
+│   ├── clean-institutions.ts  # Excel → seed-data 清洗脚本（tsx）
+│   └── parse-domain-words.ts  # 词表清单.docx → src/wordcloud 的 3 个词典文件（tsx）
 ├── src/
 │   ├── main.ts                # 启动、全局前缀 /api、CORS、IoAdapter、Swagger
 │   ├── app.module.ts          # 根模块（Config、Throttler、全局守卫）
@@ -35,7 +36,11 @@ backend/
 │   ├── questions/             # GET /api/questions
 │   ├── institutions/          # GET /api/institutions（筛选/分页/双语标签）
 │   ├── answers/               # POST /api/answer（校验 → 冷却 → 落库 → 广播）
-│   └── realtime/              # AnswersGateway（/ws，screens 房间）
+│   ├── realtime/              # AnswersGateway（/ws，screens 房间）
+│   └── wordcloud/             # 词云统计（保护性分词 → jieba → 还原 → 归一）
+│       ├── domain-words.txt   # 词表（生成物）
+│       ├── synonyms.json      # 原词 → 归一目标词（生成物）
+│       └── terms.json         # 任意写法 → 词条（生成物）
 └── test/                      # e2e 测试 + jest 配置
 ```
 
@@ -194,6 +199,9 @@ pm2 save && pm2 startup
 | `GET` | `/api/institutions/stats` | 机构统计 `{ totalInstitutions, litInstitutions, litProvinces, litCities }` |
 | `GET` | `/api/institutions/checked-in` | 已点亮（`isLit = true`）机构，供大屏初始化发光状态 |
 | `POST` | `/api/answer` | 提交答题，请求体 `{ questionId, identityTag, answer }` |
+| `GET` | `/api/wordcloud` | 八个问题的词频 `{ q1..q8: [{ word, count }] }` |
+| `GET` | `/api/wordcloud/:questionId` | 单问题词频 `[{ word, count }]`；未知题目 → `400` |
+| `GET` | `/api/wordcloud/:questionId/count` | 单问题答题总数（裸数字） |
 | `GET` | `/api/docs` | Swagger 文档 |
 
 `POST /api/answer` 返回顶层结构（与前端契约一致）：
@@ -231,24 +239,37 @@ pm2 save && pm2 startup
 ## WebSocket
 
 - 命名空间：`/ws`
-- 事件：`newAnswer`（答题）、`checkin`（机构打卡）
+- 事件：`newAnswer`（答题弹幕，立即广播）、`wordCloudUpdate`（词云更新，5 秒节流）、
+  `checkin`（机构打卡，仅首次点亮）
 - 房间：`screens`（客户端握手携带 `auth: { role: 'screen' }`；若配置了
   `SCREEN_TOKEN`，还需 `auth: { token }`）
 
-`newAnswer` 负载（不含任何客户端 IP）：
+`newAnswer` 负载（弹幕用，最小字段集，不含任何客户端 IP）：
 
 ```json
 {
-  "id": "cuid",
   "questionId": "q3",
-  "questionOrder": 3,
   "identityTag": "physician",
-  "identityTagZh": "医生",
-  "identityTagEn": "Physician",
   "answer": "加强基层儿科培训",
-  "submittedAt": "2026-01-01T00:00:00.000Z"
+  "timestamp": "2026-01-01T00:00:00.000Z"
 }
 ```
+
+`wordCloudUpdate` 负载（答题落库后只做标记，由 `WordcloudScheduler` 的
+`@Interval(5000)` 统一重算并广播，**同一问题 5 秒内最多一次**）：
+
+```json
+{
+  "questionId": "q3",
+  "words": [
+    { "word": "舒缓疗护", "count": 8 },
+    { "word": "MDT", "count": 5 }
+  ],
+  "timestamp": "2026-01-01T00:00:05.000Z"
+}
+```
+
+> 大屏收到后直接用 `words` 重绘词云；答题总数可调 `GET /api/wordcloud/:questionId/count`。
 
 `checkin` 负载（**仅首次点亮时广播**，用于点亮大屏气泡并刷新 KPI；`alreadyLit` 的重复打卡不广播）：
 

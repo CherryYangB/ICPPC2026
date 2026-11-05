@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { QuestionsService } from '../questions/questions.service'
 import { AnswersGateway } from '../realtime/answers.gateway'
-import { IDENTITY_LABELS } from '../common/constants/identities'
+import { WordcloudScheduler } from '../wordcloud/wordcloud.scheduler'
 import { CooldownException } from '../common/exceptions/cooldown.exception'
 import type { NewAnswerEvent } from '../realtime/events'
 import { CreateAnswerDto } from './dto/create-answer.dto'
@@ -20,6 +20,7 @@ export class AnswersService {
     private readonly prisma: PrismaService,
     private readonly questionsService: QuestionsService,
     private readonly gateway: AnswersGateway,
+    private readonly scheduler: WordcloudScheduler,
     config: ConfigService,
   ) {
     const limit = config.get<number>('throttle.answer.limit', 20)
@@ -51,17 +52,13 @@ export class AnswersService {
     })
 
     const next = await this.questionsService.findNext(order)
-    const labels = IDENTITY_LABELS[dto.identityTag]
 
+    // 弹幕：只带前端渲染需要的最小字段（不含客户端 IP）
     const payload: NewAnswerEvent = {
-      id: created.id,
       questionId: created.questionId,
-      questionOrder: order,
       identityTag: created.identityTag,
-      identityTagZh: labels.zh,
-      identityTagEn: labels.en,
       answer: created.answer,
-      submittedAt: created.submittedAt.toISOString(),
+      timestamp: created.submittedAt.toISOString(),
     }
 
     try {
@@ -69,6 +66,9 @@ export class AnswersService {
     } catch (err) {
       this.logger.error('Failed to broadcast newAnswer', err instanceof Error ? err.stack : String(err))
     }
+
+    // 词云只在调度器里重算：这里仅标记为脏，由 @Interval(5000) 统一刷新并广播
+    this.scheduler.markDirty(dto.questionId)
 
     return {
       success: true,
