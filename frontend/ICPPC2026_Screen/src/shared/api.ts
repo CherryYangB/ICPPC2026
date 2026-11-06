@@ -1,4 +1,5 @@
 import type { Institution } from '@/types/institution'
+import type { Question, WordCloudItem, WordCloudMap } from '@/types/quiz'
 
 /** 后端 API 前缀；dev 由 Vite 代理 /api → localhost:3000，生产同域反代 */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -102,6 +103,29 @@ export interface CheckinResponse {
 /** 机构打卡：点亮机构；已点亮 / 防刷窗口内返回 alreadyLit=true */
 export function checkinInstitution(id: number): Promise<CheckinResponse> {
   return request<CheckinResponse>('/institutions/' + id + '/checkin', { method: 'POST' })
+}
+
+// ---- 互动问答 / 词云 ----
+
+export function fetchQuestions(): Promise<Question[]> {
+  return request<Question[]>('/questions')
+}
+
+export function fetchWordClouds(): Promise<WordCloudMap> {
+  return request<WordCloudMap>('/wordcloud')
+}
+
+export function fetchWordCloud(questionId: string): Promise<WordCloudItem[]> {
+  return request<WordCloudItem[]>(`/wordcloud/${questionId}`)
+}
+
+export function fetchQuestionCount(questionId: string): Promise<number> {
+  return request<number>(`/wordcloud/${questionId}/count`)
+}
+
+/** 参与人数（按 clientIp 去重，裸数字） */
+export function fetchParticipantCount(): Promise<number> {
+  return request<number>('/wordcloud/participants')
 }
 
 const PROVINCE_SUFFIXES = ['特别行政区', '维吾尔自治区', '壮族自治区', '回族自治区', '自治区', '省', '市']

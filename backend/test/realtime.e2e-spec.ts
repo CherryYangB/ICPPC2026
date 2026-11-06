@@ -128,6 +128,31 @@ describe('WebSocket newAnswer (e2e)', () => {
     socket.close()
   })
 
+  it('broadcasts participantCount after the scheduler flush', async () => {
+    const scheduler = app.get(WordcloudScheduler)
+    const socket = await connectScreen()
+
+    const eventPromise = new Promise<Record<string, unknown>>((resolve) => {
+      socket.on('participantCount', (payload: Record<string, unknown>) => resolve(payload))
+    })
+
+    const res = await fetch(`${baseUrl}/api/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 'q6', identityTag: 'nurse', answer: '延续性照护要跟上' }),
+    })
+    expect(res.status).toBe(201)
+
+    await scheduler.flush()
+
+    const payload = await eventPromise
+    expect(Object.keys(payload)).toEqual(['count'])
+    expect(typeof payload.count).toBe('number')
+    expect(payload.count).toBeGreaterThanOrEqual(1)
+
+    socket.close()
+  })
+
   it('broadcasts checkin with the same payload as the REST response', async () => {
     const prisma = app.get(PrismaService)
     // 固定用云南（institutions 用例只点亮广东），避免并行/顺序依赖造成的抖动

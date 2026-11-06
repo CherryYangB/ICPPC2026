@@ -63,6 +63,17 @@ export class WordcloudScheduler implements OnModuleInit {
           )
         }
       }
+      // 有新答题就同步刷新「参与人数」（复用 5s 节流，不额外加定时器）
+      try {
+        const count = await this.wordcloudService.countParticipants()
+        this.gateway.broadcastParticipantCount(count)
+      } catch (error) {
+        this.logger.error(
+          '参与人数广播失败',
+          error instanceof Error ? error.stack : String(error),
+        )
+      }
+
       this.logger.debug(`词云已刷新并广播：${pending.join(', ')}`)
     } finally {
       this.flushing = false

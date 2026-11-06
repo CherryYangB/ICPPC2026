@@ -1,27 +1,483 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+import { useSocket } from '@/composables/useSocket'
+import {
+  fetchParticipantCount,
+  fetchQuestionCount,
+  fetchQuestions,
+  fetchWordCloud,
+  fetchWordClouds,
+} from '@/shared/api'
+import type {
+  NewAnswerEvent,
+  ParticipantCountEvent,
+  Question,
+  WordCloudMap,
+  WordCloudUpdateEvent,
+} from '@/types/quiz'
+import DanmakuCanvas from '@/components/DanmakuCanvas.vue'
+import WordCloudChart from '@/components/WordCloudChart.vue'
+import qrImage from '@/assets/qr-participate.svg'
+
+const DESIGN_WIDTH = 1920
+const DESIGN_HEIGHT = 1080
+
+const questions = ref<Question[]>([])
+const selectedId = ref('')
+const wordCloudCache = ref<WordCloudMap>({})
+const counts = ref<Record<string, number>>({})
+const currentCount = ref(0)
+const totalCount = ref(0)
+const participantCount = ref(0)
+
+const danmakuRef = ref<{ push: (text: string) => void } | null>(null)
+
+const { connected, on } = useSocket()
+const hasDisconnected = ref(false)
+
+const scale = ref(Math.min(window.innerWidth / DESIGN_WIDTH, window.innerHeight / DESIGN_HEIGHT))
+const updateScale = () => {
+  scale.value = Math.min(window.innerWidth / DESIGN_WIDTH, window.innerHeight / DESIGN_HEIGHT)
+}
+const handleResize = () => updateScale()
+
+const currentQuestion = computed(() => questions.value.find((q) => q.id === selectedId.value) ?? null)
+const themeColor = computed(() => currentQuestion.value?.color ?? '#2f80ed')
+
+// 八问无需切换：把所有问题的词频合并到同一个词云
+const wordCloudData = computed(() => {
+  const merged = new Map<string, number>()
+  for (const words of Object.values(wordCloudCache.value)) {
+    for (const item of words) {
+      merged.set(item.word, (merged.get(item.word) ?? 0) + item.count)
+    }
+  }
+  return [...merged.entries()].map(([word, count]) => ({
+    name: word,
+    value: [...word].length > 8 ? count * 0.7 : count,
+  }))
+})
+
+const loadCounts = async () => {
+  const results = await Promise.allSettled(questions.value.map((q) => fetchQuestionCount(q.id)))
+  let total = 0
+  results.forEach((result, index) => {
+    const id = questions.value[index].id
+    const count = result.status === 'fulfilled' ? result.value : 0
+    counts.value[id] = count
+    total += count
+  })
+  totalCount.value = total
+  currentCount.value = counts.value[selectedId.value] ?? 0
+}
+
+const refreshWordClouds = async () => {
+  try {
+    const clouds = await fetchWordClouds()
+    wordCloudCache.value = clouds
+  } catch (error) {
+    console.error('[Interactive] Failed to refresh wordclouds', error)
+  }
+
+  try {
+    participantCount.value = await fetchParticipantCount()
+  } catch (error) {
+    console.error('[Interactive] Failed to refresh participant count', error)
+  }
+}
+
+const selectQuestion = async (id: string) => {
+  selectedId.value = id
+  currentCount.value = counts.value[id] ?? 0
+  try {
+    const [words, count] = await Promise.all([fetchWordCloud(id), fetchQuestionCount(id)])
+    wordCloudCache.value = { ...wordCloudCache.value, [id]: words }
+    counts.value = { ...counts.value, [id]: count }
+    if (selectedId.value === id) currentCount.value = count
+  } catch (error) {
+    console.error('[Interactive] Failed to load question', error)
+  }
+}
+
+const loadInit = async () => {
+  try {
+    const [qs, clouds] = await Promise.all([fetchQuestions(), fetchWordClouds()])
+    questions.value = qs
+    wordCloudCache.value = clouds
+    selectedId.value = qs[0]?.id ?? ''
+    await loadCounts()
+  } catch (error) {
+    console.error('[Interactive] Failed to load', error)
+  }
+
+  try {
+    participantCount.value = await fetchParticipantCount()
+  } catch (error) {
+    console.error('[Interactive] Failed to load participant count', error)
+  }
+}
+
+on('newAnswer', (payload: NewAnswerEvent) => {
+  if (payload.answer.trim()) {
+    danmakuRef.value?.push(payload.answer)
+  }
+  counts.value[payload.questionId] = (counts.value[payload.questionId] ?? 0) + 1
+  totalCount.value += 1
+  if (payload.questionId === selectedId.value) currentCount.value += 1
+})
+
+on('wordCloudUpdate', (payload: WordCloudUpdateEvent) => {
+  wordCloudCache.value = { ...wordCloudCache.value, [payload.questionId]: payload.words }
+})
+
+on('participantCount', (payload: ParticipantCountEvent) => {
+  participantCount.value = payload.count
+})
+
+watch(connected, (value, oldValue) => {
+  if (!value && oldValue) hasDisconnected.value = true
+  if (value && !oldValue && hasDisconnected.value) {
+    hasDisconnected.value = false
+    void refreshWordClouds()
+  }
+})
+
+onMounted(() => {
+  updateScale()
+  window.addEventListener('resize', handleResize)
+  void loadInit()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
+</script>
+
 <template>
-  <div class="screen-page">
-    <div class="placeholder">互动问答大屏（占位）</div>
+  <div class='screen-viewport'>
+    <div class='screen-stage' :style='{ transform: `translate(-50%, -50%) scale(${scale})` }'>
+      <div class='interactive-page'>
+        <p v-if='hasDisconnected && !connected' class='reconnect-banner'>连接中断，正在重连</p>
+
+        <header class='page-header'>
+          <div class='conference-identity'>
+            <h1 class='conference-name'>第六届儿童舒缓安宁国际大会（2026）</h1>
+            <p class='conference-name-en'>6th International Conference on Paediatric Palliative Care · 2026</p>
+          </div>
+          <nav class='display-nav' aria-label='大屏导航'>
+            <span class='nav-pill'>大会总览 / Overview</span>
+            <span class='nav-pill is-active'>八问聚合 / Eight questions</span>
+            <span class='nav-pill'>参与网络 / Network</span>
+          </nav>
+        </header>
+
+        <section class='content-heading'>
+          <h2 class='heading-zh'>八问观点聚合</h2>
+          <p class='heading-en'>Eight questions · Shared perspectives</p>
+        </section>
+
+        <main class='content-grid'>
+          <section class='left-column'>
+            <div class='wordcloud-card'>
+              <WordCloudChart class='wordcloud-canvas' :data='wordCloudData' :color='themeColor' />
+            </div>
+
+            <div class='qr-card'>
+              <div class='qr-copy'>
+                <h3 class='qr-title'>扫码参与</h3>
+                <p class='qr-subtitle-en'>Scan to participate</p>
+                <p class='qr-body'>扫码提交观点，参与儿童舒缓疗护标准讨论</p>
+                <p class='qr-body-en'>Scan to submit your thoughts and join the discussion</p>
+              </div>
+              <img class='qr-image' :src='qrImage' alt='扫码参与二维码' />
+            </div>
+          </section>
+
+          <section class='response-wall'>
+            <DanmakuCanvas ref='danmakuRef' class='danmaku-layer' />
+            <div class='about-panel'>
+              <h3 class='about-title'>聚合说明</h3>
+              <p class='about-subtitle-en'>About this view</p>
+              <p class='about-body'>词云与弹幕仅展示审核通过的观点，数据实时更新。</p>
+              <p class='about-body-en'>Only approved perspectives are shown; data updates in real time.</p>
+            </div>
+          </section>
+        </main>
+
+        <footer class='page-footer'>
+          数据实时更新，仅展示审核通过的观点。 / Live data · Approved perspectives only.
+        </footer>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.screen-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100vh;
-  padding: 24px;
-  background: var(--screen-bg);
+.screen-viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0b1220;
 }
 
-.placeholder {
-  padding: 32px 48px;
-  border: 1px dashed rgba(170, 180, 196, 0.35);
-  border-radius: 16px;
-  background: var(--screen-card);
-  color: var(--screen-text-muted);
-  font-size: 24px;
-  letter-spacing: 2px;
+.screen-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center center;
+}
+
+.interactive-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0b1220;
+  color: #ffffff;
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+
+.reconnect-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 30;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid rgba(235, 87, 87, 0.5);
+  border-radius: 8px;
+  background: rgba(17, 28, 46, 0.92);
+  color: #f2a0a0;
+  font-size: 13px;
+}
+
+.page-header {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 1840px;
+  height: 80px;
+}
+
+.conference-name {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 36px;
+}
+
+.conference-name-en {
+  margin: 8px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 17px;
+  line-height: 20.6px;
+  color: #aab4c4;
+}
+
+.display-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 43px;
+  padding: 0 20px;
+  border-radius: 6px;
+  background: #111c2e;
+  color: #aab4c4;
+  font-size: 16px;
+  line-height: 19.2px;
+  white-space: nowrap;
+}
+
+.nav-pill.is-active {
+  background: #2f80ed;
+  color: #ffffff;
+}
+
+.content-heading {
+  position: absolute;
+  top: 152px;
+  left: 40px;
+  width: 1840px;
+}
+
+.heading-zh {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 36.4px;
+}
+
+.heading-en {
+  margin: 4px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 16px;
+  line-height: 22.4px;
+  color: #aab4c4;
+}
+
+.content-grid {
+  position: absolute;
+  top: 237px;
+  left: 40px;
+  display: flex;
+  gap: 24px;
+  width: 1840px;
+  height: 787px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 640px;
+  height: 787px;
+}
+
+.wordcloud-card {
+  position: relative;
+  width: 640px;
+  height: 440.4px;
+  border: 1px dashed #26354c;
+  border-radius: 12px;
+  background: #16243a;
+  overflow: hidden;
+}
+
+.wordcloud-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.qr-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 640px;
+  height: 273.6px;
+  padding: 24px;
+  border: 1px solid #26354c;
+  border-radius: 12px;
+  background: #111c2e;
+}
+
+.qr-copy {
+  max-width: 400px;
+}
+
+.qr-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 21.6px;
+}
+
+.qr-subtitle-en {
+  margin: 4px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  line-height: 15.7px;
+  color: #aab4c4;
+}
+
+.qr-body {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 19.6px;
+  color: #aab4c4;
+}
+
+.qr-body-en {
+  margin: 12px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 12px;
+  line-height: 16.8px;
+  color: #aab4c4;
+}
+
+.qr-image {
+  flex: 0 0 auto;
+  width: 152px;
+  height: 152px;
+}
+
+.response-wall {
+  position: relative;
+  flex: 1;
+  height: 787px;
+  border: 1px dashed #26354c;
+  border-radius: 12px;
+  background: #16243a;
+  overflow: hidden;
+}
+
+.danmaku-layer {
+  position: absolute;
+  inset: 20px;
+  z-index: 1;
+}
+
+.about-panel {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2;
+  height: 158px;
+  padding: 24px;
+  border-radius: 12px;
+  background: #111c2e;
+}
+
+.about-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 25.2px;
+}
+
+.about-subtitle-en {
+  margin: 2px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 15px;
+  line-height: 21px;
+  color: #aab4c4;
+}
+
+.about-body {
+  margin: 16px 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22.4px;
+}
+
+.about-body-en {
+  margin: 6px 0 0;
+  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  line-height: 18.2px;
+  color: #aab4c4;
+}
+
+.page-footer {
+  position: absolute;
+  top: 1024px;
+  left: 40px;
+  width: 1840px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 15.6px;
+  color: #aab4c4;
 }
 </style>

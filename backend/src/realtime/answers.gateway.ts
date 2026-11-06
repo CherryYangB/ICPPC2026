@@ -6,15 +6,21 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets'
-import type { Server, Socket } from 'socket.io'
-import type { InstitutionCheckinEvent, NewAnswerEvent, WordCloudUpdateEvent } from './events'
+import type { Namespace, Socket } from 'socket.io'
+import type {
+  InstitutionCheckinEvent,
+  NewAnswerEvent,
+  ParticipantCountEvent,
+  WordCloudUpdateEvent,
+} from './events'
 
 /**
- * /ws 命名空间的共享网关：
+ * /ws 命名空间的共享网关（声明了 namespace，Nest 注入的是 Namespace 而非 Server）：
  * - newAnswer：答题弹幕（立即广播）
  * - wordCloudUpdate：词云更新（由 WordcloudScheduler 每 5 秒节流广播）
+ * - participantCount：参与人数（按 clientIp 去重，随词云一起节流广播）
  * - checkin：机构打卡（仅首次点亮时广播）
- * 三者都只发给 screens 房间。
+ * 以上都只发给 screens 房间。
  */
 @WebSocketGateway({
   namespace: '/ws',
@@ -35,7 +41,7 @@ import type { InstitutionCheckinEvent, NewAnswerEvent, WordCloudUpdateEvent } fr
 })
 export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server!: Server
+  server!: Namespace
 
   private readonly logger = new Logger(AnswersGateway.name)
   private readonly screenToken: string
@@ -60,6 +66,14 @@ export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   handleDisconnect(client: Socket): void {
     void client.leave('screens')
+  }
+
+  /** 参与人数更新：由 WordcloudScheduler 消费脏问题后广播（每 5 秒最多一次） */
+  broadcastParticipantCount(count: number): void {
+    if (!this.server) return
+
+    const payload: ParticipantCountEvent = { count }
+    this.server.to('screens').emit('participantCount', payload)
   }
 
   broadcastNewAnswer(payload: NewAnswerEvent): void {

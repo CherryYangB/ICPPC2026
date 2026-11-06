@@ -31,6 +31,15 @@ export class WordcloudController {
     return this.wordcloudService.computeAllWordClouds()
   }
 
+  /** 参与人数（按 clientIp 去重）—— 必须声明在 :questionId 之前，否则会被当成题目 id */
+  @Get('participants')
+  @Header('Content-Type', 'application/json; charset=utf-8')
+  @ApiOperation({ summary: '参与人数（按 clientIp 去重）' })
+  @ApiOkResponse({ description: '参与人数（裸数字）', schema: { type: 'number', example: 128 } })
+  participants(): Promise<number> {
+    return this.wordcloudService.countParticipants()
+  }
+
   /** 单问题答题总数（裸数字，供前端统计卡片直接使用） */
   @Get(':questionId/count')
   @Header('Content-Type', 'application/json; charset=utf-8')

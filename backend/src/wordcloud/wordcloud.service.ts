@@ -357,4 +357,17 @@ export class WordcloudService implements OnModuleInit {
   async countAnswers(questionId: string): Promise<number> {
     return this.prisma.answer.count({ where: { questionId } })
   }
+
+  /**
+   * 参与人数：按 clientIp 去重的答题人数（忽略空 IP）。
+   * 注意：现场若共用同一出口 IP（NAT），该数字会偏低。
+   */
+  async countParticipants(): Promise<number> {
+    const rows = await this.prisma.answer.findMany({
+      where: { clientIp: { not: null } },
+      select: { clientIp: true },
+      distinct: ['clientIp'],
+    })
+    return rows.length
+  }
 }

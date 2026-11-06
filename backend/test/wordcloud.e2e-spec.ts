@@ -52,6 +52,13 @@ describe('wordcloud endpoints (e2e)', () => {
     expect(res.body).toBeGreaterThanOrEqual(0)
   })
 
+  it('GET /api/wordcloud/participants 返回裸数字（不会被当成题目 id）', async () => {
+    const res = await request(app.getHttpServer()).get('/api/wordcloud/participants').expect(200)
+
+    expect(typeof res.body).toBe('number')
+    expect(res.body).toBeGreaterThanOrEqual(0)
+  })
+
   it('未知题目 id 返回 400', async () => {
     await request(app.getHttpServer()).get('/api/wordcloud/q9').expect(400)
     await request(app.getHttpServer()).get('/api/wordcloud/q9/count').expect(400)

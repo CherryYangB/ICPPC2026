@@ -202,6 +202,7 @@ pm2 save && pm2 startup
 | `GET` | `/api/wordcloud` | 八个问题的词频 `{ q1..q8: [{ word, count }] }` |
 | `GET` | `/api/wordcloud/:questionId` | 单问题词频 `[{ word, count }]`；未知题目 → `400` |
 | `GET` | `/api/wordcloud/:questionId/count` | 单问题答题总数（裸数字） |
+| `GET` | `/api/wordcloud/participants` | 参与人数（按 `clientIp` 去重，裸数字；NAT 共用出口 IP 时会偏低） |
 | `GET` | `/api/docs` | Swagger 文档 |
 
 `POST /api/answer` 返回顶层结构（与前端契约一致）：
@@ -270,6 +271,15 @@ pm2 save && pm2 startup
 ```
 
 > 大屏收到后直接用 `words` 重绘词云；答题总数可调 `GET /api/wordcloud/:questionId/count`。
+
+`participantCount` 负载（与词云一起节流广播：答题后最多 5 秒更新一次）：
+
+```json
+{ "count": 128 }
+```
+
+> 口径：`Answer.clientIp` 去重后的答题人数（忽略空 IP）。现场若共用同一出口 IP（NAT），
+> 该数字会偏低；大屏首屏可先调 `GET /api/wordcloud/participants` 初始化。
 
 `checkin` 负载（**仅首次点亮时广播**，用于点亮大屏气泡并刷新 KPI；`alreadyLit` 的重复打卡不广播）：
 

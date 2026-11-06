@@ -4,15 +4,26 @@ import type { WordcloudService } from './wordcloud.service'
 
 function createDeps() {
   const broadcastWordCloudUpdate = jest.fn()
+  const broadcastParticipantCount = jest.fn()
   const computeWordCloud = jest.fn(async (questionId: string) => [
     { word: `word-${questionId}`, count: 1 },
   ])
+  const countParticipants = jest.fn(async () => 7)
 
-  const gateway = { broadcastWordCloudUpdate } as unknown as AnswersGateway
-  const service = { computeWordCloud } as unknown as WordcloudService
+  const gateway = {
+    broadcastWordCloudUpdate,
+    broadcastParticipantCount,
+  } as unknown as AnswersGateway
+  const service = { computeWordCloud, countParticipants } as unknown as WordcloudService
   const scheduler = new WordcloudScheduler(service, gateway)
 
-  return { scheduler, computeWordCloud, broadcastWordCloudUpdate }
+  return {
+    scheduler,
+    computeWordCloud,
+    countParticipants,
+    broadcastWordCloudUpdate,
+    broadcastParticipantCount,
+  }
 }
 
 describe('WordcloudScheduler（词云节流）', () => {
@@ -82,12 +93,15 @@ describe('WordcloudScheduler（词云节流）', () => {
   })
 
   it('脏集合为空时 flush 不调用任何方法', async () => {
-    const { scheduler, computeWordCloud, broadcastWordCloudUpdate } = createDeps()
+    const { scheduler, computeWordCloud, countParticipants, broadcastWordCloudUpdate, broadcastParticipantCount } =
+      createDeps()
 
     await scheduler.flush()
 
     expect(computeWordCloud).not.toHaveBeenCalled()
+    expect(countParticipants).not.toHaveBeenCalled()
     expect(broadcastWordCloudUpdate).not.toHaveBeenCalled()
+    expect(broadcastParticipantCount).not.toHaveBeenCalled()
   })
 
   it('上一轮未结束时再次 flush 直接返回（重入保护）', async () => {
@@ -114,5 +128,30 @@ describe('WordcloudScheduler（词云节流）', () => {
 
     expect(computeWordCloud).toHaveBeenCalledTimes(1)
     expect(scheduler.getDirtyQuestions()).toEqual(['q2'])
+  })
+
+  it('有新答题时同时广播参与人数', async () => {
+    const { scheduler, countParticipants, broadcastParticipantCount } = createDeps()
+
+    scheduler.markDirty('q1')
+    await scheduler.flush()
+
+    expect(countParticipants).toHaveBeenCalledTimes(1)
+    expect(broadcastParticipantCount).toHaveBeenCalledWith(7)
+  })
+
+  it('参与人数查询失败不影响词云广播', async () => {
+    const { scheduler, countParticipants, broadcastWordCloudUpdate, broadcastParticipantCount } =
+      createDeps()
+
+    countParticipants.mockImplementation(async () => {
+      throw new Error('db down')
+    })
+
+    scheduler.markDirty('q1')
+    await expect(scheduler.flush()).resolves.toBeUndefined()
+
+    expect(broadcastWordCloudUpdate).toHaveBeenCalledWith('q1', [{ word: 'word-q1', count: 1 }])
+    expect(broadcastParticipantCount).not.toHaveBeenCalled()
   })
 })
