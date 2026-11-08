@@ -34,6 +34,7 @@ async function bootstrap(): Promise<void> {
       .setTitle('ICPPC 2026 Interaction API')
       .setDescription('Conference interaction system backend')
       .setVersion('1.0')
+      .addBearerAuth()
       .build()
     const document = SwaggerModule.createDocument(app, swaggerConfig)
     SwaggerModule.setup('api/docs', app, document)

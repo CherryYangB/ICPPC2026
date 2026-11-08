@@ -31,7 +31,7 @@ import {
   toInstitution,
   type InstitutionStats,
 } from '@/shared/api'
-import type { CheckinEvent, Institution } from '@/types/institution'
+import type { CheckinEvent, CheckinRevokedEvent, Institution } from '@/types/institution'
 
 import CheckinSuccessModal from '@/components/CheckinSuccessModal.vue'
 
@@ -894,9 +894,15 @@ const refreshCheckedIn = async () => {
     }
     syncLitIds(checkedIn.map((item) => String(item.id)))
     const provinces = new Set(checkedIn.map((item) => item.province))
+    const cities = new Set(checkedIn.map((item) => item.city))
     animateLitStats(provinces.size, checkedIn.length)
     if (stats.value) {
-      stats.value = { ...stats.value, litProvinces: provinces.size, litInstitutions: checkedIn.length }
+      stats.value = {
+        ...stats.value,
+        litProvinces: provinces.size,
+        litInstitutions: checkedIn.length,
+        litCities: cities.size,
+      }
     }
   } catch (error) {
     console.error('[ResourceMap] Failed to refresh checked-in institutions', error)
@@ -927,7 +933,17 @@ const handleCheckin = (payload: CheckinEvent) => {
   }
 }
 
+/** 后台撤销点亮：移除本地发光状态，并重新拉取已点亮列表 / KPI */
+const handleCheckinRevoked = (payload: CheckinRevokedEvent) => {
+  const id = String(payload.institutionId)
+  litInstitutionIds.delete(id)
+  const inst = institutions.value.find((item) => item.id === id)
+  if (inst) inst.isLit = false
+  void refreshCheckedIn()
+}
+
 onSocket('checkin', handleCheckin)
+onSocket('checkinRevoked', handleCheckinRevoked)
 
 watch(connected, (value, oldValue) => {
   if (!value && oldValue) {

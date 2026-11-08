@@ -5,6 +5,7 @@ import { useSocket } from '@/composables/useSocket'
 import { ROUTE_PATHS } from '@/shared/constants'
 import {
   fetchParticipantCount,
+  fetchQrInfo,
   fetchQuestionCount,
   fetchQuestions,
   fetchRecentAnswers,
@@ -12,6 +13,8 @@ import {
   fetchWordClouds,
 } from '@/shared/api'
 import type {
+  AnswerDeletedEvent,
+  AnswerHiddenEvent,
   NewAnswerEvent,
   ParticipantCountEvent,
   Question,
@@ -20,7 +23,7 @@ import type {
 } from '@/types/quiz'
 import DanmakuCanvas from '@/components/DanmakuCanvas.vue'
 import WordCloudChart from '@/components/WordCloudChart.vue'
-import qrImage from '@/assets/qr-participate.svg'
+import qrFallback from '@/assets/qr-participate.jpg'
 
 const DESIGN_WIDTH = 1920
 const DESIGN_HEIGHT = 1080
@@ -33,9 +36,30 @@ const currentCount = ref(0)
 const totalCount = ref(0)
 const participantCount = ref(0)
 
+/** 二维码优先使用后端上传版本，失败时回退到打包资源 */
+const qrImage = ref(qrFallback)
+
+const loadQrImage = async () => {
+  try {
+    const info = await fetchQrInfo()
+    if (info.url) qrImage.value = info.url
+  } catch (error) {
+    console.warn('[Interactive] Failed to load QR info, using bundled fallback', error)
+  }
+}
+
+const handleQrImageError = () => {
+  qrImage.value = qrFallback
+}
+
 const danmakuRef = ref<{ push: (text: string) => void } | null>(null)
 
-const danmakuQueue = ref<string[]>([])
+interface DanmakuQueueItem {
+  answerId: string
+  answer: string
+}
+
+const danmakuQueue = ref<DanmakuQueueItem[]>([])
 let danmakuTimer: number | undefined
 let danmakuIndex = 0
 
@@ -48,7 +72,7 @@ const scheduleNextDanmaku = () => {
   if (queue.length === 0) {
     return
   }
-  danmakuRef.value?.push(queue[danmakuIndex % queue.length])
+  danmakuRef.value?.push(queue[danmakuIndex % queue.length].answer)
   danmakuIndex += 1
 
   const gap = danmakuIndex % queue.length === 0
@@ -58,12 +82,12 @@ const scheduleNextDanmaku = () => {
   danmakuTimer = window.setTimeout(scheduleNextDanmaku, gap)
 }
 
-const startDanmakuLoop = (texts: string[]) => {
+const startDanmakuLoop = (items: DanmakuQueueItem[]) => {
   if (danmakuTimer !== undefined) {
     window.clearTimeout(danmakuTimer)
     danmakuTimer = undefined
   }
-  danmakuQueue.value = texts.filter((text) => text.trim())
+  danmakuQueue.value = items.filter((item) => item.answer.trim())
   danmakuIndex = 0
   scheduleNextDanmaku()
 }
@@ -155,7 +179,9 @@ const loadInit = async () => {
   // 弹幕回放：错落 + 循环
   try {
     const recent = await fetchRecentAnswers(20)
-    startDanmakuLoop(recent.map((item) => item.answer))
+    startDanmakuLoop(
+      recent.map((item) => ({ answerId: item.answerId, answer: item.answer })),
+    )
   } catch (error) {
     console.error('[Interactive] Failed to seed danmaku', error)
   }
@@ -178,6 +204,28 @@ on('participantCount', (payload: ParticipantCountEvent) => {
   participantCount.value = payload.count
 })
 
+/** 后台隐藏 / 删除回答：从弹幕回放队列移除，并重新同步计数与词云 */
+const handleAnswerRemoved = (answerId: string) => {
+  danmakuQueue.value = danmakuQueue.value.filter((item) => item.answerId !== answerId)
+  if (danmakuQueue.value.length === 0) {
+    danmakuIndex = 0
+    if (danmakuTimer !== undefined) {
+      window.clearTimeout(danmakuTimer)
+      danmakuTimer = undefined
+    }
+  }
+  void loadCounts()
+  void refreshWordClouds()
+}
+
+on('answerHidden', (payload: AnswerHiddenEvent) => {
+  handleAnswerRemoved(payload.answerId)
+})
+
+on('answerDeleted', (payload: AnswerDeletedEvent) => {
+  handleAnswerRemoved(payload.answerId)
+})
+
 watch(connected, (value, oldValue) => {
   if (!value && oldValue) hasDisconnected.value = true
   if (value && !oldValue && hasDisconnected.value) {
@@ -190,6 +238,7 @@ onMounted(() => {
   updateScale()
   window.addEventListener('resize', handleResize)
   void loadInit()
+  void loadQrImage()
 })
 
 onBeforeUnmount(() => {
@@ -239,7 +288,12 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
                 <p class='qr-body'>扫码提交观点，参与儿童舒缓疗护标准讨论</p>
                 <p class='qr-body-en'>Scan to submit your thoughts and join the discussion</p>
               </div>
-              <img class='qr-image' :src='qrImage' alt='扫码参与二维码' />
+              <img
+                class='qr-image'
+                :src='qrImage'
+                alt='扫码参与二维码'
+                @error='handleQrImageError'
+              />
             </div>
           </section>
 

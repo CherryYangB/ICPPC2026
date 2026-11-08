@@ -8,7 +8,10 @@ import {
 } from '@nestjs/websockets'
 import type { Namespace, Socket } from 'socket.io'
 import type {
+  AnswerDeletedEvent,
+  AnswerHiddenEvent,
   InstitutionCheckinEvent,
+  InstitutionCheckinRevokedEvent,
   NewAnswerEvent,
   ParticipantCountEvent,
   WordCloudUpdateEvent,
@@ -20,6 +23,8 @@ import type {
  * - wordCloudUpdate：词云更新（由 WordcloudScheduler 每 5 秒节流广播）
  * - participantCount：参与人数（按 clientIp 去重，随词云一起节流广播）
  * - checkin：机构打卡（仅首次点亮时广播）
+ * - checkinRevoked：后台撤销打卡
+ * - answerHidden / answerDeleted：后台隐藏 / 删除回答，大屏移除弹幕
  * 以上都只发给 screens 房间。
  */
 @WebSocketGateway({
@@ -99,5 +104,20 @@ export class AnswersGateway implements OnGatewayConnection, OnGatewayDisconnect 
   broadcastCheckin(payload: InstitutionCheckinEvent): void {
     if (!this.server) return
     this.server.to('screens').emit('checkin', payload)
+  }
+
+  broadcastCheckinRevoked(payload: InstitutionCheckinRevokedEvent): void {
+    if (!this.server) return
+    this.server.to('screens').emit('checkinRevoked', payload)
+  }
+
+  broadcastAnswerHidden(payload: AnswerHiddenEvent): void {
+    if (!this.server) return
+    this.server.to('screens').emit('answerHidden', payload)
+  }
+
+  broadcastAnswerDeleted(payload: AnswerDeletedEvent): void {
+    if (!this.server) return
+    this.server.to('screens').emit('answerDeleted', payload)
   }
 }

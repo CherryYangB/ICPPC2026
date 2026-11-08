@@ -80,13 +80,20 @@ describe('WebSocket newAnswer (e2e)', () => {
     expect(res.status).toBe(201)
 
     const payload = await eventPromise
-    // 弹幕最小字段集：与 backend NewAnswerEvent 完全一致
-    expect(Object.keys(payload).sort()).toEqual(['answer', 'identityTag', 'questionId', 'timestamp'])
+    // 弹幕字段集：与 backend NewAnswerEvent 完全一致（answerId 供后台隐藏 / 删除时定位）
+    expect(Object.keys(payload).sort()).toEqual([
+      'answer',
+      'answerId',
+      'identityTag',
+      'questionId',
+      'timestamp',
+    ])
     expect(payload).toMatchObject({
       questionId: 'q3',
       identityTag: 'nurse',
       answer: '实时测试',
     })
+    expect(typeof payload.answerId).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
     expect(payload).not.toHaveProperty('clientIp')
 

@@ -55,6 +55,7 @@ export class AnswersService {
 
     // 弹幕：只带前端渲染需要的最小字段（不含客户端 IP）
     const payload: NewAnswerEvent = {
+      answerId: created.id,
       questionId: created.questionId,
       identityTag: created.identityTag,
       answer: created.answer,
@@ -77,14 +78,22 @@ export class AnswersService {
     }
   }
 
-  /** 最近答题（大屏初始化弹幕回放） */
+  /** 最近答题（大屏初始化弹幕回放）；隐藏回答不参与回放 */
   async findRecent(limit: number): Promise<NewAnswerEvent[]> {
     const rows = await this.prisma.answer.findMany({
+      where: { isHidden: false },
       orderBy: { submittedAt: 'desc' },
       take: Math.min(Math.max(limit, 1), 50),
-      select: { questionId: true, identityTag: true, answer: true, submittedAt: true },
+      select: {
+        id: true,
+        questionId: true,
+        identityTag: true,
+        answer: true,
+        submittedAt: true,
+      },
     })
     return rows.map((row) => ({
+      answerId: row.id,
       questionId: row.questionId,
       identityTag: row.identityTag,
       answer: row.answer,

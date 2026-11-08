@@ -111,6 +111,18 @@ export function fetchQuestions(): Promise<Question[]> {
   return request<Question[]>('/questions')
 }
 
+/** 当前二维码信息（后台可上传替换；未上传时 url = null） */
+export interface QrInfo {
+  url: string | null
+  contentType?: string
+  size?: number
+  updatedAt?: string
+}
+
+export function fetchQrInfo(): Promise<QrInfo> {
+  return request<QrInfo>('/settings/qr')
+}
+
 export function fetchWordClouds(): Promise<WordCloudMap> {
   return request<WordCloudMap>('/wordcloud')
 }

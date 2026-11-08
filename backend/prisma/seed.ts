@@ -1,8 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { PrismaClient } from '@prisma/client'
+import { hash } from 'bcrypt'
 
 const prisma = new PrismaClient()
+
+/** 默认超级管理员：仅首次创建，已存在时绝不重置密码 */
+const DEFAULT_ADMIN = {
+  username: 'admin',
+  password: 'icppc2026',
+  displayName: '超级管理员',
+  role: 'super_admin',
+} as const
 
 // 八问：逐字取自 frontend/ICPPC2026_H5/src/shared/constants.ts 的 QUESTION_CARDS
 const QUESTIONS = [
@@ -114,7 +123,28 @@ async function seedInstitutions(): Promise<void> {
   console.log(`已导入 ${records.length} 家机构`)
 }
 
+async function seedDefaultAdmin(): Promise<void> {
+  const existing = await prisma.user.findUnique({ where: { username: DEFAULT_ADMIN.username } })
+  if (existing) {
+    console.log('默认超级管理员已存在，跳过（不会重置密码）')
+    return
+  }
+
+  await prisma.user.create({
+    data: {
+      username: DEFAULT_ADMIN.username,
+      passwordHash: await hash(DEFAULT_ADMIN.password, 10),
+      displayName: DEFAULT_ADMIN.displayName,
+      role: DEFAULT_ADMIN.role,
+      mustChangePassword: true,
+    },
+  })
+  console.log('已创建默认超级管理员 admin / icppc2026（首次登录必须修改密码）')
+}
+
 async function main(): Promise<void> {
+  await seedDefaultAdmin()
+
   for (const q of QUESTIONS) {
     await prisma.question.upsert({
       where: { id: q.id },

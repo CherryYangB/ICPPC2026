@@ -32,11 +32,29 @@ model Answer {
   identityTag String // physician | nurse | ...
   answer      String // 1..100 字符
   clientIp    String? // 仅审计，不返回、不广播
+  // 后台隐藏：词云、弹幕回放、答题数、参与人数均过滤 isHidden = true
+  isHidden    Boolean  @default(false)
   submittedAt DateTime @default(now())
 
   @@index([questionId, submittedAt])
   @@index([identityTag, submittedAt])
   @@index([clientIp, questionId, submittedAt])
+}
+
+// 后台账号：角色 super_admin / admin / viewer（SQLite 不用 enum，应用层白名单校验）
+model User {
+  id                 Int       @id @default(autoincrement())
+  username           String    @unique
+  passwordHash       String
+  displayName        String
+  role               String // super_admin / admin / viewer
+  email              String?
+  isActive           Boolean   @default(true)
+  // 首次登录 / 管理员重置密码后强制改密；前端据此跳转改密页
+  mustChangePassword Boolean   @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 // 机构：由 backend/scripts/clean-institutions.ts 从 Excel 清洗生成（prisma/seed-data/institutions.json）
@@ -61,6 +79,22 @@ model Institution {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  checkins CheckinRecord[]
+
   @@unique([province, city, nameZh])
   @@index([province])
+}
+
+// 打卡历史：用于总览「最近活动」；删除机构时级联删除
+model CheckinRecord {
+  id            Int         @id @default(autoincrement())
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  province      String
+  city          String
+  nameZh        String
+  checkedAt     DateTime    @default(now())
+
+  @@index([checkedAt])
+  @@index([institutionId])
 }

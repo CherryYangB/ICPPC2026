@@ -1,10 +1,28 @@
 /** 答题弹幕广播负载（不含任何客户端 IP） */
 export interface NewAnswerEvent {
+  /** Answer.id（cuid）：后台隐藏 / 删除时大屏据此移除弹幕 */
+  answerId: string
   questionId: string
   identityTag: string
   answer: string
   /** 提交时间，ISO 字符串 */
   timestamp: string
+}
+
+/** 后台隐藏回答：大屏从弹幕队列移除对应条目 */
+export interface AnswerHiddenEvent {
+  answerId: string
+}
+
+/** 后台删除回答：大屏从弹幕队列移除对应条目 */
+export interface AnswerDeletedEvent {
+  answerId: string
+}
+
+/** 后台撤销机构打卡：大屏移除该机构发光效果 */
+export interface InstitutionCheckinRevokedEvent {
+  institutionId: number
+  province: string
 }
 
 /** 词云更新广播负载：由 WordcloudScheduler 节流广播（每 5 秒最多一次/问题） */

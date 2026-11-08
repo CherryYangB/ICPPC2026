@@ -6,6 +6,10 @@ export default () => ({
     .map((s) => s.trim())
     .filter(Boolean),
   screenToken: process.env.SCREEN_TOKEN ?? '',
+  jwt: {
+    secret: process.env.JWT_SECRET ?? '',
+    expiresIn: process.env.JWT_EXPIRES_IN ?? '8h',
+  },
   trustProxy: Number(process.env.TRUST_PROXY ?? 1),
   swaggerEnabled: process.env.SWAGGER_ENABLED !== 'false',
   throttle: {
@@ -20,4 +24,5 @@ export default () => ({
   },
   answerCooldownMs: Number(process.env.ANSWER_COOLDOWN_MS ?? 30000),
   checkinCooldownMs: Number(process.env.CHECKIN_COOLDOWN_MS ?? 10000),
+  onlineWindowMinutes: Number(process.env.ONLINE_WINDOW_MINUTES ?? 10),
 })

@@ -322,7 +322,7 @@ export class WordcloudService implements OnModuleInit {
     if (!this.ready) return []
 
     const rows = await this.prisma.answer.findMany({
-      where: { questionId },
+      where: { questionId, isHidden: false },
       select: { answer: true },
     })
     return this.countAnswersToCloud(rows.map((row) => row.answer))
@@ -336,7 +336,7 @@ export class WordcloudService implements OnModuleInit {
     if (!this.ready) return result
 
     const rows = await this.prisma.answer.findMany({
-      where: { questionId: { in: [...QUESTION_IDS] } },
+      where: { questionId: { in: [...QUESTION_IDS] }, isHidden: false },
       select: { questionId: true, answer: true },
     })
 
@@ -353,9 +353,9 @@ export class WordcloudService implements OnModuleInit {
     return result
   }
 
-  /** 该问题的答题总数（前端统计卡片用） */
+  /** 该问题的答题总数（前端统计卡片用）；隐藏回答不计入 */
   async countAnswers(questionId: string): Promise<number> {
-    return this.prisma.answer.count({ where: { questionId } })
+    return this.prisma.answer.count({ where: { questionId, isHidden: false } })
   }
 
   /**
@@ -364,7 +364,7 @@ export class WordcloudService implements OnModuleInit {
    */
   async countParticipants(): Promise<number> {
     const rows = await this.prisma.answer.findMany({
-      where: { clientIp: { not: null } },
+      where: { clientIp: { not: null }, isHidden: false },
       select: { clientIp: true },
       distinct: ['clientIp'],
     })

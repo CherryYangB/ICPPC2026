@@ -132,7 +132,9 @@ describe('WordcloudService（保护性分词 + 同义词归一）', () => {
     const { service, prisma } = createService([{ questionId: 'q6', answer: '随便写点' }], 42)
 
     await expect(service.countAnswers('q6')).resolves.toBe(42)
-    expect(prisma.answer.count).toHaveBeenCalledWith({ where: { questionId: 'q6' } })
+    expect(prisma.answer.count).toHaveBeenCalledWith({
+      where: { questionId: 'q6', isHidden: false },
+    })
   })
 
   it('词典未加载时降级为空结果（不抛错）', async () => {

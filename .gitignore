@@ -22,6 +22,10 @@ coverage/
 *.db-wal
 *.db-shm
 
+# ===== 后台上传（二维码等） =====
+backend/uploads/
+backend/uploads-test/
+
 # ===== 日志与系统文件 =====
 *.log
 .DS_Store

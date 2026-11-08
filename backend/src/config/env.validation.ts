@@ -14,5 +14,17 @@ export function validate(config: Record<string, unknown>): Record<string, unknow
     throw new Error(`Invalid CHECKIN_COOLDOWN_MS value: ${String(config.CHECKIN_COOLDOWN_MS)}`)
   }
 
+  const onlineWindowMinutes = Number(config.ONLINE_WINDOW_MINUTES ?? 10)
+  if (!Number.isInteger(onlineWindowMinutes) || onlineWindowMinutes <= 0) {
+    throw new Error(`Invalid ONLINE_WINDOW_MINUTES value: ${String(config.ONLINE_WINDOW_MINUTES)}`)
+  }
+
+  const jwtSecret = typeof config.JWT_SECRET === 'string' ? config.JWT_SECRET.trim() : ''
+  if (jwtSecret.length < 32) {
+    throw new Error(
+      'JWT_SECRET 缺失或长度不足 32 位。请在 backend/.env 配置 JWT_SECRET（建议使用 openssl rand -hex 32 生成）。',
+    )
+  }
+
   return config
 }

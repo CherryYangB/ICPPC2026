@@ -54,3 +54,9 @@ export interface CheckinEvent {
   litProvinces: number
   litCities: number
 }
+
+/** 后台撤销打卡：大屏移除该机构的发光效果 */
+export interface CheckinRevokedEvent {
+  institutionId: number
+  province: string
+}

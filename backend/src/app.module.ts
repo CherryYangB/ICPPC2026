@@ -6,6 +6,10 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import configuration from './config/configuration'
 import { validate } from './config/env.validation'
 import { PrismaModule } from './prisma/prisma.module'
+import { AuthModule } from './auth/auth.module'
+import { UsersModule } from './users/users.module'
+import { DashboardModule } from './dashboard/dashboard.module'
+import { SettingsModule } from './settings/settings.module'
 import { HealthController } from './health/health.controller'
 import { QuestionsModule } from './questions/questions.module'
 import { InstitutionsModule } from './institutions/institutions.module'
@@ -33,6 +37,10 @@ import { WordcloudModule } from './wordcloud/wordcloud.module'
       ],
     }),
     PrismaModule,
+    AuthModule,
+    UsersModule,
+    DashboardModule,
+    SettingsModule,
     QuestionsModule,
     InstitutionsModule,
     AnswersModule,

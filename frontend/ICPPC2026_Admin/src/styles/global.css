@@ -1,0 +1,49 @@
+:root {
+  /* 主题色（与八问 q1 蓝色一致） */
+  --primary: #2f80ed;
+  --primary-hover: #1e6fd9;
+  --primary-active-bg: #eaf2fe;
+
+  --sidebar-width: 220px;
+  --header-height: 64px;
+
+  --bg: #f5f6f8;
+  --text: #1f2329;
+  --text-muted: #8a9099;
+  --border: #e5e6eb;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
