@@ -2,10 +2,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { useSocket } from '@/composables/useSocket'
+import { ROUTE_PATHS } from '@/shared/constants'
 import {
   fetchParticipantCount,
   fetchQuestionCount,
   fetchQuestions,
+  fetchRecentAnswers,
   fetchWordCloud,
   fetchWordClouds,
 } from '@/shared/api'
@@ -32,6 +34,39 @@ const totalCount = ref(0)
 const participantCount = ref(0)
 
 const danmakuRef = ref<{ push: (text: string) => void } | null>(null)
+
+const danmakuQueue = ref<string[]>([])
+let danmakuTimer: number | undefined
+let danmakuIndex = 0
+
+const DANMAKU_GAP_MIN = 1200
+const DANMAKU_GAP_MAX = 2600
+const DANMAKU_LOOP_PAUSE = 2000
+
+const scheduleNextDanmaku = () => {
+  const queue = danmakuQueue.value
+  if (queue.length === 0) {
+    return
+  }
+  danmakuRef.value?.push(queue[danmakuIndex % queue.length])
+  danmakuIndex += 1
+
+  const gap = danmakuIndex % queue.length === 0
+    ? DANMAKU_LOOP_PAUSE
+    : DANMAKU_GAP_MIN + Math.random() * (DANMAKU_GAP_MAX - DANMAKU_GAP_MIN)
+
+  danmakuTimer = window.setTimeout(scheduleNextDanmaku, gap)
+}
+
+const startDanmakuLoop = (texts: string[]) => {
+  if (danmakuTimer !== undefined) {
+    window.clearTimeout(danmakuTimer)
+    danmakuTimer = undefined
+  }
+  danmakuQueue.value = texts.filter((text) => text.trim())
+  danmakuIndex = 0
+  scheduleNextDanmaku()
+}
 
 const { connected, on } = useSocket()
 const hasDisconnected = ref(false)
@@ -116,6 +151,14 @@ const loadInit = async () => {
   } catch (error) {
     console.error('[Interactive] Failed to load participant count', error)
   }
+
+  // 弹幕回放：错落 + 循环
+  try {
+    const recent = await fetchRecentAnswers(20)
+    startDanmakuLoop(recent.map((item) => item.answer))
+  } catch (error) {
+    console.error('[Interactive] Failed to seed danmaku', error)
+  }
 }
 
 on('newAnswer', (payload: NewAnswerEvent) => {
@@ -151,6 +194,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  if (danmakuTimer !== undefined) {
+    window.clearTimeout(danmakuTimer)
+    danmakuTimer = undefined
+  }
 })
 
 defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
@@ -169,8 +216,8 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
           </div>
           <nav class='display-nav' aria-label='大屏导航'>
             <span class='nav-pill'>大会总览 / Overview</span>
-            <span class='nav-pill is-active'>八问聚合 / Eight questions</span>
-            <span class='nav-pill'>参与网络 / Network</span>
+            <RouterLink class='nav-pill is-active' :to='ROUTE_PATHS.Interactive'>八问聚合 / Eight questions</RouterLink>
+            <RouterLink class='nav-pill' :to='ROUTE_PATHS.ResourceMap'>资源地图 / Resource map</RouterLink>
           </nav>
         </header>
 
@@ -198,12 +245,6 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
 
           <section class='response-wall'>
             <DanmakuCanvas ref='danmakuRef' class='danmaku-layer' />
-            <div class='about-panel'>
-              <h3 class='about-title'>聚合说明</h3>
-              <p class='about-subtitle-en'>About this view</p>
-              <p class='about-body'>词云与弹幕仅展示审核通过的观点，数据实时更新。</p>
-              <p class='about-body-en'>Only approved perspectives are shown; data updates in real time.</p>
-            </div>
           </section>
         </main>
 
@@ -424,50 +465,8 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
 
 .danmaku-layer {
   position: absolute;
-  inset: 20px;
+  inset: 0;
   z-index: 1;
-}
-
-.about-panel {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  z-index: 2;
-  height: 158px;
-  padding: 24px;
-  border-radius: 12px;
-  background: #111c2e;
-}
-
-.about-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 25.2px;
-}
-
-.about-subtitle-en {
-  margin: 2px 0 0;
-  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-  font-size: 15px;
-  line-height: 21px;
-  color: #aab4c4;
-}
-
-.about-body {
-  margin: 16px 0 0;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 22.4px;
-}
-
-.about-body-en {
-  margin: 6px 0 0;
-  font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-  font-size: 13px;
-  line-height: 18.2px;
-  color: #aab4c4;
 }
 
 .page-footer {

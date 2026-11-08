@@ -23,7 +23,11 @@ const buildOption = () => ({
     {
       type: 'wordCloud',
       shape: 'circle',
-      sizeRange: [16, 64],
+      left: 'center',
+      top: 'center',
+      width: '100%',
+      height: '100%',
+      sizeRange: [18, 80],
       rotationRange: [0, 0],
       textStyle: {
         color: () => props.color,

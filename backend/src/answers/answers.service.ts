@@ -77,6 +77,21 @@ export class AnswersService {
     }
   }
 
+  /** 最近答题（大屏初始化弹幕回放） */
+  async findRecent(limit: number): Promise<NewAnswerEvent[]> {
+    const rows = await this.prisma.answer.findMany({
+      orderBy: { submittedAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 50),
+      select: { questionId: true, identityTag: true, answer: true, submittedAt: true },
+    })
+    return rows.map((row) => ({
+      questionId: row.questionId,
+      identityTag: row.identityTag,
+      answer: row.answer,
+      timestamp: row.submittedAt.toISOString(),
+    }))
+  }
+
   private async assertCooldown(ip: string, questionId: string): Promise<void> {
     const cutoff = new Date(Date.now() - this.cooldownMs)
     const recent = await this.prisma.answer.findFirst({

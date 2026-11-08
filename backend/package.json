@@ -25,6 +25,7 @@
     "db:reset": "prisma migrate reset --force",
     "clean:institutions": "tsx scripts/clean-institutions.ts",
     "parse:domain-words": "tsx scripts/parse-domain-words.ts",
+    "seed:demo": "tsx scripts/seed-demo-answers.ts",
     "seed:institutions": "ts-node prisma/seed.ts"
   },
   "prisma": {

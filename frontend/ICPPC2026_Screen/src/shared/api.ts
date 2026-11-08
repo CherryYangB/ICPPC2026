@@ -1,5 +1,5 @@
 import type { Institution } from '@/types/institution'
-import type { Question, WordCloudItem, WordCloudMap } from '@/types/quiz'
+import type { NewAnswerEvent, Question, WordCloudItem, WordCloudMap } from '@/types/quiz'
 
 /** 后端 API 前缀；dev 由 Vite 代理 /api → localhost:3000，生产同域反代 */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -124,6 +124,10 @@ export function fetchQuestionCount(questionId: string): Promise<number> {
 }
 
 /** 参与人数（按 clientIp 去重，裸数字） */
+export function fetchRecentAnswers(limit = 20): Promise<NewAnswerEvent[]> {
+  return request<NewAnswerEvent[]>('/answer/recent?limit=' + limit)
+}
+
 export function fetchParticipantCount(): Promise<number> {
   return request<number>('/wordcloud/participants')
 }

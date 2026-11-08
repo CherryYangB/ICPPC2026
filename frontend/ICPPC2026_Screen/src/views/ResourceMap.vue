@@ -22,6 +22,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useGeoAggregation, type CityBubble, type GeoLevel, type ProvinceBubble } from '@/composables/useGeoAggregation'
 import { TYPE_FILTER_OPTIONS, useInstitutionFilters } from '@/composables/useInstitutionFilters'
 import { useSocket } from '@/composables/useSocket'
+import { ROUTE_PATHS } from '@/shared/constants'
 import {
   checkinInstitution,
   fetchCheckedInInstitutions,
@@ -1051,8 +1052,8 @@ defineExpose({
           </div>
           <nav class="screen-nav" aria-label="大屏导航">
             <span class="nav-pill">大会总览 / Overview</span>
-            <span class="nav-pill">八问集合 / Eight questions</span>
-            <span class="nav-pill is-active">参与网络 / Network</span>
+            <RouterLink class="nav-pill" :to="ROUTE_PATHS.Interactive">八问聚合 / Eight questions</RouterLink>
+            <RouterLink class="nav-pill is-active" :to="ROUTE_PATHS.ResourceMap">资源地图 / Resource map</RouterLink>
           </nav>
         </header>
 
