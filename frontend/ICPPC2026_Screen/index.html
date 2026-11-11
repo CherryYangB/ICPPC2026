@@ -4,8 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ICPPC 2026 · 大屏</title>
+<style>
+  #app-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: #0B1220;
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+  }
+  #app-loading .spinner {
+    width: 56px;
+    height: 56px;
+    border: 3px solid rgba(47, 128, 237, 0.2);
+    border-top-color: #2F80ED;
+    border-radius: 50%;
+    animation: app-loading-spin 0.9s linear infinite;
+  }
+  #app-loading .title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: #FFFFFF;
+  }
+  #app-loading .subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: #AAB4C4;
+  }
+  #app-loading.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  @keyframes app-loading-spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
   </head>
   <body>
+    <div id="app-loading">
+      <div class="spinner"></div>
+      <p class="title">聚力 · 聚光 · 蝶变</p>
+      <p class="subtitle">正在加载互动大屏…</p>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

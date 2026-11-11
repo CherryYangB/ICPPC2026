@@ -6,12 +6,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: ROUTE_PATHS.Interactive,
     name: ROUTE_NAMES.Interactive,
-    component: () => import('@/views/Interactive.vue'),
+    component: () => import('../views/Interactive.vue'),
   },
   {
     path: ROUTE_PATHS.ResourceMap,
     name: ROUTE_NAMES.ResourceMap,
-    component: () => import('@/views/ResourceMap.vue'),
+    component: () => import('../views/ResourceMap.vue'),
   },
 ]
 
