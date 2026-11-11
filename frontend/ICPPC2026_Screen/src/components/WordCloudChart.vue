@@ -10,8 +10,9 @@ interface WordCloudItem {
 
 const props = defineProps<{
   data: WordCloudItem[]
-  color: string
 }>()
+
+const WORDCLOUD_COLORS = ['#F7A8C4', '#FFD26B', '#32C4B5', '#E85868', '#B198E6'] as const
 
 const containerRef = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
@@ -30,7 +31,8 @@ const buildOption = () => ({
       sizeRange: [18, 80],
       rotationRange: [0, 0],
       textStyle: {
-        color: () => props.color,
+        color: (params: { dataIndex?: number }) =>
+          WORDCLOUD_COLORS[(params.dataIndex ?? 0) % WORDCLOUD_COLORS.length],
         fontFamily: 'Noto Sans SC',
       },
       data: props.data,
@@ -54,7 +56,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.data, props.color],
+  () => props.data,
   () => render(),
   { deep: true },
 )

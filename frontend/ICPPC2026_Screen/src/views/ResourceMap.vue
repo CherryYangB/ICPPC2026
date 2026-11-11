@@ -423,13 +423,13 @@ const createProvinceSeries = (show: boolean): BubbleSeriesOption => ({
   data: toProvinceSeriesData(provinceBubbles.value),
   label: show ? BUBBLE_LABEL : { show: false },
   itemStyle: {
-    color: 'rgba(47, 128, 237, 0.38)',
-    borderColor: '#2F80ED',
+    color: 'rgba(67, 150, 232, 0.38)',
+    borderColor: '#4396E8',
     borderWidth: 2,
     shadowBlur: 16,
-    shadowColor: 'rgba(47, 128, 237, 0.85)',
+    shadowColor: 'rgba(67, 150, 232, 0.85)',
   },
-  emphasis: { scale: 1.15, itemStyle: { color: 'rgba(47, 128, 237, 0.62)' } },
+  emphasis: { scale: 1.15, itemStyle: { color: 'rgba(67, 150, 232, 0.62)' } },
   ...bubbleAnimation(),
 })
 
@@ -446,13 +446,13 @@ const createCitySeries = (show: boolean): BubbleSeriesOption => ({
   data: toCitySeriesData(cityBubbles.value),
   label: show ? BUBBLE_LABEL : { show: false },
   itemStyle: {
-    color: 'rgba(39, 174, 96, 0.38)',
-    borderColor: '#27AE60',
+    color: 'rgba(50, 196, 181, 0.38)',
+    borderColor: '#32C4B5',
     borderWidth: 2,
     shadowBlur: 16,
-    shadowColor: 'rgba(39, 174, 96, 0.85)',
+    shadowColor: 'rgba(50, 196, 181, 0.85)',
   },
-  emphasis: { scale: 1.15, itemStyle: { color: 'rgba(39, 174, 96, 0.62)' } },
+  emphasis: { scale: 1.15, itemStyle: { color: 'rgba(50, 196, 181, 0.62)' } },
   ...bubbleAnimation(),
 })
 
@@ -473,11 +473,11 @@ const createLitProvinceSeries = (): EffectScatterSeriesOption => ({
   label: { show: false },
   data: [],
   itemStyle: {
-    color: '#F2C94C',
-    borderColor: '#FFE29A',
+    color: '#FFD26B',
+    borderColor: '#FFE9B3',
     borderWidth: 1,
     shadowBlur: 18,
-    shadowColor: 'rgba(242, 201, 76, 0.9)',
+    shadowColor: 'rgba(255, 210, 107, 0.9)',
   },
 })
 
@@ -494,11 +494,11 @@ const createLitCitySeries = (): EffectScatterSeriesOption => ({
   label: { show: false },
   data: [],
   itemStyle: {
-    color: '#F2C94C',
-    borderColor: '#FFE29A',
+    color: '#FFD26B',
+    borderColor: '#FFE9B3',
     borderWidth: 1,
     shadowBlur: 18,
-    shadowColor: 'rgba(242, 201, 76, 0.9)',
+    shadowColor: 'rgba(255, 210, 107, 0.9)',
   },
 })
 
@@ -515,11 +515,11 @@ const createLitActiveSeries = (id: string): EffectScatterSeriesOption => ({
   label: { show: false },
   data: [],
   itemStyle: {
-    color: '#FFC542',
-    borderColor: '#FFE29A',
+    color: '#FFD26B',
+    borderColor: '#FFE9B3',
     borderWidth: 1,
     shadowBlur: 26,
-    shadowColor: 'rgba(255, 197, 66, 0.95)',
+    shadowColor: 'rgba(255, 210, 107, 0.95)',
   },
 })
 
@@ -824,19 +824,19 @@ const renderMap = (geoJson: GeoJsonSource) => {
         show: false,
       },
       itemStyle: {
-        areaColor: '#1a2740',
-        borderColor: '#2f4a6e',
+        areaColor: '#EAF2FB',
+        borderColor: '#D5E4F2',
         borderWidth: 1,
       },
       emphasis: {
         label: {
           show: true,
-          color: '#ffffff',
+          color: '#334155',
           fontSize: 14,
         },
         itemStyle: {
-          areaColor: '#2f80ed',
-          borderColor: '#2f80ed',
+          areaColor: '#4396E8',
+          borderColor: '#4396E8',
         },
       },
     },
@@ -1382,10 +1382,10 @@ defineExpose({
 }
 
 .map-page {
-  --panel-inset: #16243a;
-  --accent: #2f80ed;
-  --line: rgba(255, 255, 255, 0.06);
-  --line-strong: rgba(170, 180, 196, 0.14);
+  --panel-inset: #F1F5F9;
+  --accent: #4396E8;
+  --line: #F1F5F9;
+  --line-strong: #E2E8F0;
 
   position: relative;
   display: flex;
@@ -1407,6 +1407,7 @@ defineExpose({
 
 .brand-title {
   margin: 0;
+  color: #4396E8;
   font-size: 30px;
   font-weight: 600;
   line-height: 1.2;
@@ -1433,7 +1434,7 @@ defineExpose({
   padding: 0 20px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(17, 28, 46, 0.6);
+  background: rgba(255, 255, 255, 0.6);
   color: var(--screen-text-muted);
   font-size: 14px;
   white-space: nowrap;
@@ -1528,7 +1529,7 @@ defineExpose({
 
 .type-chip.is-active {
   border-color: var(--accent);
-  background: rgba(47, 128, 237, 0.16);
+  background: rgba(67, 150, 232, 0.16);
   color: var(--screen-text);
 }
 
@@ -1579,7 +1580,7 @@ defineExpose({
 }
 
 .type-chip:focus-within {
-  box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.5);
+  box-shadow: 0 0 0 2px rgba(67, 150, 232, 0.5);
 }
 
 .type-checkbox {
@@ -1647,7 +1648,7 @@ defineExpose({
 }
 
 .province-option.is-active {
-  background: rgba(47, 128, 237, 0.16);
+  background: rgba(67, 150, 232, 0.16);
   color: var(--screen-text);
 }
 
@@ -1760,7 +1761,7 @@ defineExpose({
   padding: 10px 18px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(17, 28, 46, 0.82);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--screen-text-muted);
   font-size: 13px;
   transform: translate(-50%, -50%);
@@ -1768,8 +1769,8 @@ defineExpose({
 }
 
 .map-feedback.is-error {
-  border-color: rgba(235, 87, 87, 0.45);
-  color: #f2a0a0;
+  border-color: rgba(232, 88, 104, 0.45);
+  color: #E85868;
 }
 
 .map-caption {
@@ -1779,7 +1780,7 @@ defineExpose({
   z-index: 2;
   max-width: 980px;
   margin: 0;
-  color: rgba(170, 180, 196, 0.75);
+  color: rgba(100, 116, 139, 0.75);
   font-size: 12px;
   line-height: 1.5;
   pointer-events: none;
@@ -1829,7 +1830,7 @@ defineExpose({
 .skeleton {
   display: block;
   border-radius: 6px;
-  background: linear-gradient(90deg, #16243a 25%, #1d3150 37%, #16243a 63%);
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 37%, #E2E8F0 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
@@ -1855,7 +1856,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(11, 18, 32, 0.55);
+  background: rgba(15, 23, 42, 0.3);
 }
 
 .map-skeleton {
@@ -1882,19 +1883,19 @@ defineExpose({
 
 .data-retry {
   padding: 14px 26px;
-  border: 1px solid rgba(235, 87, 87, 0.55);
+  border: 1px solid rgba(232, 88, 104, 0.55);
   border-radius: 10px;
-  background: rgba(17, 28, 46, 0.92);
-  color: #f2a0a0;
+  background: rgba(255, 255, 255, 0.92);
+  color: #E85868;
   font-size: 15px;
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 
 .data-retry:hover {
-  border-color: #eb5757;
-  background: rgba(235, 87, 87, 0.14);
-  color: #ffffff;
+  border-color: #E85868;
+  background: rgba(232, 88, 104, 0.14);
+  color: #E85868;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2030,7 +2031,7 @@ defineExpose({
 }
 
 .institution-card.is-expanded {
-  border-color: rgba(47, 128, 237, 0.5);
+  border-color: rgba(67, 150, 232, 0.5);
 }
 
 .card-summary {
@@ -2078,8 +2079,8 @@ defineExpose({
 }
 
 .card-checkin:hover:not(:disabled) {
-  background: #4a93f5;
-  box-shadow: 0 0 16px rgba(47, 128, 237, 0.75);
+  background: #5DA9F0;
+  box-shadow: 0 0 16px rgba(67, 150, 232, 0.75);
   transform: translateY(-1px);
 }
 
@@ -2088,7 +2089,7 @@ defineExpose({
 }
 
 .card-checkin.is-lit {
-  background: rgba(170, 180, 196, 0.16);
+  background: rgba(100, 116, 139, 0.12);
   border-color: var(--line-strong);
   color: var(--screen-text-muted);
 }
@@ -2100,8 +2101,8 @@ defineExpose({
 .checkin-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  border: 2px solid rgba(67, 150, 232, 0.35);
+  border-top-color: #4396E8;
   border-radius: 50%;
   animation: checkin-spin 0.8s linear infinite;
 }
@@ -2134,8 +2135,8 @@ defineExpose({
   flex: 0 0 auto;
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgba(47, 128, 237, 0.16);
-  color: #9cc4ff;
+  background: rgba(67, 150, 232, 0.16);
+  color: #4396E8;
   font-size: 12px;
   white-space: nowrap;
 }
@@ -2202,10 +2203,10 @@ defineExpose({
   align-items: center;
   gap: 4px;
   padding: 1px 8px;
-  border: 1px solid rgba(39, 174, 96, 0.55);
+  border: 1px solid rgba(50, 196, 181, 0.55);
   border-radius: 999px;
-  background: rgba(39, 174, 96, 0.14);
-  color: #7ee2a8;
+  background: rgba(50, 196, 181, 0.14);
+  color: #32C4B5;
   font-size: 12px;
   white-space: nowrap;
 }
@@ -2214,20 +2215,20 @@ defineExpose({
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #27ae60;
-  box-shadow: 0 0 6px rgba(39, 174, 96, 0.9);
+  background: #32C4B5;
+  box-shadow: 0 0 6px rgba(50, 196, 181, 0.9);
 }
 
 .card-tag.is-ward {
-  border-color: rgba(47, 128, 237, 0.55);
-  background: rgba(47, 128, 237, 0.16);
-  color: #9cc4ff;
+  border-color: rgba(67, 150, 232, 0.55);
+  background: rgba(67, 150, 232, 0.16);
+  color: #4396E8;
 }
 
 .card-tag.is-clinic {
-  border-color: rgba(39, 174, 96, 0.55);
-  background: rgba(39, 174, 96, 0.14);
-  color: #7ee2a8;
+  border-color: rgba(50, 196, 181, 0.55);
+  background: rgba(50, 196, 181, 0.14);
+  color: #32C4B5;
 }
 
 .card-project-list {
@@ -2268,17 +2269,17 @@ defineExpose({
 
 .toast-item {
   padding: 10px 16px;
-  border: 1px solid rgba(39, 174, 96, 0.5);
+  border: 1px solid rgba(50, 196, 181, 0.5);
   border-radius: 8px;
-  background: rgba(17, 28, 46, 0.94);
-  color: #7ee2a8;
+  background: rgba(255, 255, 255, 0.94);
+  color: #32C4B5;
   font-size: 14px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
 }
 
 .toast-item.is-error {
-  border-color: rgba(235, 87, 87, 0.55);
-  color: #f2a0a0;
+  border-color: rgba(232, 88, 104, 0.55);
+  color: #E85868;
 }
 
 .toast-enter-active,
@@ -2299,10 +2300,10 @@ defineExpose({
   z-index: 60;
   margin: 0;
   padding: 8px 14px;
-  border: 1px solid rgba(235, 87, 87, 0.5);
+  border: 1px solid rgba(232, 88, 104, 0.5);
   border-radius: 8px;
-  background: rgba(17, 28, 46, 0.92);
-  color: #f2a0a0;
+  background: rgba(255, 255, 255, 0.92);
+  color: #E85868;
   font-size: 13px;
 }
 

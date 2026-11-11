@@ -94,9 +94,9 @@ onBeforeUnmount(clearCloseTimer)
   position: relative;
   width: 480px;
   padding: 32px 32px 0;
-  border: 1px solid var(--line-strong, rgba(170, 180, 196, 0.14));
+  border: 1px solid var(--line-strong, #E2E8F0);
   border-radius: 12px;
-  background: var(--screen-card, #111c2e);
+  background: var(--screen-card, #FFFFFF);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
   overflow: hidden;
@@ -118,8 +118,8 @@ onBeforeUnmount(clearCloseTimer)
 }
 
 .checkin-modal-close:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgba(100, 116, 139, 0.08);
+  color: #334155;
 }
 
 .checkin-check {
@@ -136,13 +136,13 @@ onBeforeUnmount(clearCloseTimer)
 
 .checkin-check-circle {
   fill: none;
-  stroke: rgba(39, 174, 96, 0.35);
+  stroke: rgba(50, 196, 181, 0.35);
   stroke-width: 2;
 }
 
 .checkin-check-mark {
   fill: none;
-  stroke: #27ae60;
+  stroke: #32C4B5;
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -189,7 +189,7 @@ onBeforeUnmount(clearCloseTimer)
 }
 
 .checkin-modal-stat strong {
-  color: var(--accent, #2f80ed);
+  color: var(--accent, #4396E8);
   font-size: 16px;
   font-weight: 700;
 }
@@ -200,13 +200,13 @@ onBeforeUnmount(clearCloseTimer)
   right: 0;
   bottom: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(100, 116, 139, 0.08);
 }
 
 .checkin-modal-progress-bar {
   display: block;
   height: 100%;
-  background: var(--accent, #2f80ed);
+  background: var(--accent, #4396E8);
   transform-origin: left center;
   animation: modal-progress 5s linear forwards;
 }

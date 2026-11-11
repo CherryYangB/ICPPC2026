@@ -1,11 +1,19 @@
 :root {
   /* 深色大屏基础色板 */
-  --screen-bg: #0b1220;
-  --screen-card: #111c2e;
-  --screen-text: #ffffff;
-  --screen-text-muted: #aab4c4;
+  --screen-bg: #F8FBFF;
+  --screen-card: #FFFFFF;
+  --screen-text: #334155;
+  --screen-text-muted: #64748B;
 
-  color-scheme: dark;
+  --brand-primary: #4396E8;
+  --brand-pink: #F7A8C4;
+  --brand-yellow: #FFD26B;
+  --brand-teal: #32C4B5;
+  --brand-red: #E85868;
+  --brand-purple: #B198E6;
+  --screen-border: #E2E8F0;
+
+  color-scheme: light;
 }
 
 *,
@@ -56,6 +64,6 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a3850;
+  background: #CBD5E1;
   border-radius: 4px;
 }

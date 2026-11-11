@@ -101,9 +101,6 @@ const updateScale = () => {
 }
 const handleResize = () => updateScale()
 
-const currentQuestion = computed(() => questions.value.find((q) => q.id === selectedId.value) ?? null)
-const themeColor = computed(() => currentQuestion.value?.color ?? '#2f80ed')
-
 // 八问无需切换：把所有问题的词频合并到同一个词云
 const wordCloudData = computed(() => {
   const merged = new Map<string, number>()
@@ -278,7 +275,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
         <main class='content-grid'>
           <section class='left-column'>
             <div class='wordcloud-card'>
-              <WordCloudChart class='wordcloud-canvas' :data='wordCloudData' :color='themeColor' />
+              <WordCloudChart class='wordcloud-canvas' :data='wordCloudData' />
             </div>
 
             <div class='qr-card'>
@@ -315,7 +312,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: #0b1220;
+  background: #F8FBFF;
 }
 
 .screen-stage {
@@ -331,8 +328,8 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   position: relative;
   width: 100%;
   height: 100%;
-  background: #0b1220;
-  color: #ffffff;
+  background: #F8FBFF;
+  color: #334155;
   font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
 }
 
@@ -343,10 +340,10 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   z-index: 30;
   margin: 0;
   padding: 8px 14px;
-  border: 1px solid rgba(235, 87, 87, 0.5);
+  border: 1px solid rgba(232, 88, 104, 0.5);
   border-radius: 8px;
-  background: rgba(17, 28, 46, 0.92);
-  color: #f2a0a0;
+  background: rgba(255, 255, 255, 0.94);
+  color: #E85868;
   font-size: 13px;
 }
 
@@ -363,6 +360,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
 
 .conference-name {
   margin: 0;
+  color: #4396E8;
   font-size: 30px;
   font-weight: 700;
   line-height: 36px;
@@ -373,7 +371,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 17px;
   line-height: 20.6px;
-  color: #aab4c4;
+  color: #64748B;
 }
 
 .display-nav {
@@ -388,15 +386,15 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   height: 43px;
   padding: 0 20px;
   border-radius: 6px;
-  background: #111c2e;
-  color: #aab4c4;
+  background: #FFFFFF;
+  color: #64748B;
   font-size: 16px;
   line-height: 19.2px;
   white-space: nowrap;
 }
 
 .nav-pill.is-active {
-  background: #2f80ed;
+  background: #4396E8;
   color: #ffffff;
 }
 
@@ -419,7 +417,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 16px;
   line-height: 22.4px;
-  color: #aab4c4;
+  color: #64748B;
 }
 
 .content-grid {
@@ -444,9 +442,9 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   position: relative;
   width: 640px;
   height: 440.4px;
-  border: 1px dashed #26354c;
+  border: 1px dashed #E2E8F0;
   border-radius: 12px;
-  background: #16243a;
+  background: #FFFFFF;
   overflow: hidden;
 }
 
@@ -462,9 +460,9 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   width: 640px;
   height: 273.6px;
   padding: 24px;
-  border: 1px solid #26354c;
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
-  background: #111c2e;
+  background: #FFFFFF;
 }
 
 .qr-copy {
@@ -483,14 +481,14 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 13px;
   line-height: 15.7px;
-  color: #aab4c4;
+  color: #64748B;
 }
 
 .qr-body {
   margin: 16px 0 0;
   font-size: 14px;
   line-height: 19.6px;
-  color: #aab4c4;
+  color: #64748B;
 }
 
 .qr-body-en {
@@ -498,7 +496,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 12px;
   line-height: 16.8px;
-  color: #aab4c4;
+  color: #64748B;
 }
 
 .qr-image {
@@ -511,9 +509,9 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   position: relative;
   flex: 1;
   height: 787px;
-  border: 1px dashed #26354c;
+  border: 1px dashed #E2E8F0;
   border-radius: 12px;
-  background: #16243a;
+  background: #FFFFFF;
   overflow: hidden;
 }
 
@@ -531,6 +529,6 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
   margin: 0;
   font-size: 13px;
   line-height: 15.6px;
-  color: #aab4c4;
+  color: #64748B;
 }
 </style>

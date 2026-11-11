@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { QUESTION_PAGE_SIZE, ROUTE_NAMES } from '@/shared/constants'
+import { ROUTE_NAMES } from '@/shared/constants'
 import { questionCards } from '@/shared/questions'
 
 const router = useRouter()
@@ -10,45 +9,15 @@ const copy = {
   headerZh: '儿童舒缓安宁大会 · 2026',
   headerEn: 'Paediatric Palliative Care · 2026',
   sectionPrefix: '02 / EIGHT QUESTIONS · 八问 · ',
+  titleZh: '选择您想回应的问题',
+  titleEn: 'Choose a question to respond to',
   hintZh: '点击问题发表观点 · 演示内容',
   hintEn: 'Select a question · Demo',
-  ctaNextZh: '查看第 5–8 问',
-  ctaNextEn: 'Questions 5–8',
-  ctaPrevZh: '返回第 1–4 问',
-  ctaPrevEn: 'Questions 1–4',
   back: '返回',
 } as const
 
-const pageCopy = {
-  1: {
-    titleZh: '选择您想回应的问题',
-    titleEn: 'Choose a question to respond to',
-  },
-  2: {
-    titleZh: '让更多视角进入讨论',
-    titleEn: 'Bring more perspectives into the conversation',
-  },
-} as const
-
-const page = ref<1 | 2>(1)
-
-const rangeLabel = computed(() => (page.value === 1 ? '1–4' : '5–8'))
-
-const activeCopy = computed(() => pageCopy[page.value])
-
-const visibleCards = computed(() => {
-  const start = (page.value - 1) * QUESTION_PAGE_SIZE
-  return questionCards.value.slice(start, start + QUESTION_PAGE_SIZE)
-})
-
 function handleBack(): void {
   router.back()
-}
-
-function switchPage(next: 1 | 2): void {
-  if (next === page.value) return
-  page.value = next
-  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 
@@ -79,10 +48,10 @@ function switchPage(next: 1 | 2): void {
     </header>
 
     <main class="main">
-      <p class="section-label">{{ copy.sectionPrefix }}{{ rangeLabel }}</p>
+      <p class="section-label">{{ copy.sectionPrefix }}1–8</p>
 
-      <h2 class="page-title__zh">{{ activeCopy.titleZh }}</h2>
-      <p class="page-title__en">{{ activeCopy.titleEn }}</p>
+      <h2 class="page-title__zh">{{ copy.titleZh }}</h2>
+      <p class="page-title__en">{{ copy.titleEn }}</p>
 
       <p class="hint">
         <span class="hint__zh">{{ copy.hintZh }}</span>
@@ -91,7 +60,7 @@ function switchPage(next: 1 | 2): void {
       </p>
 
       <ul class="question-list">
-        <li v-for="card in visibleCards" :key="card.id">
+        <li v-for="card in questionCards" :key="card.id">
           <RouterLink
             class="question-card"
             :style="{ '--topic-color': card.color }"
@@ -112,27 +81,6 @@ function switchPage(next: 1 | 2): void {
         </li>
       </ul>
     </main>
-
-    <footer class="footer">
-      <button
-        v-if="page === 1"
-        type="button"
-        class="footer-btn footer-btn--primary"
-        @click="switchPage(2)"
-      >
-        <span>{{ copy.ctaNextZh }}</span>
-        <span class="footer-btn__en">{{ copy.ctaNextEn }}</span>
-      </button>
-      <button
-        v-else
-        type="button"
-        class="footer-btn footer-btn--secondary"
-        @click="switchPage(1)"
-      >
-        <span>{{ copy.ctaPrevZh }}</span>
-        <span class="footer-btn__en">{{ copy.ctaPrevEn }}</span>
-      </button>
-    </footer>
   </div>
 </template>
 
@@ -141,7 +89,6 @@ function switchPage(next: 1 | 2): void {
   --blue: #2f80ed;
   --bg: #f7f9fc;
   --surface: #ffffff;
-  --info-bg: #edf4fe;
   --text-main: #1b2437;
   --text-sub: #64748b;
   --text-muted: #94a3b8;
@@ -213,7 +160,7 @@ function switchPage(next: 1 | 2): void {
 .main {
   flex: 1;
   width: 100%;
-  padding: 20px 20px 12px;
+  padding: 20px 20px calc(env(safe-area-inset-bottom) + 24px);
 }
 
 .section-label {
@@ -329,65 +276,8 @@ function switchPage(next: 1 | 2): void {
   color: var(--text-sub);
 }
 
-.footer {
-  position: sticky;
-  bottom: 0;
-  padding: 12px 20px calc(env(safe-area-inset-bottom) + 12px);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-}
-
-.footer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 16px;
-  font: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 14px;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.footer-btn--primary {
-  color: #ffffff;
-  background: var(--blue);
-  border: none;
-}
-
-.footer-btn--primary:active {
-  background: #2569c7;
-}
-
-.footer-btn--secondary {
-  color: var(--blue);
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-}
-
-.footer-btn--secondary:active {
-  background: var(--info-bg);
-}
-
-.footer-btn__en {
-  font-size: 14px;
-  font-weight: 500;
-  opacity: 0.9;
-}
-
-.footer-btn:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .question-card,
-  .footer-btn {
+  .question-card {
     transition: none;
   }
 }

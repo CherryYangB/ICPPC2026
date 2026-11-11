@@ -120,8 +120,6 @@ export const QUESTION_CARDS: readonly QuestionCard[] = [
   },
 ]
 
-export const QUESTION_PAGE_SIZE = 4
-
 export const ROUTE_NAMES = {
   Home: 'home',
   Questions: 'questions',
