@@ -257,7 +257,7 @@ defineExpose({ selectQuestion, currentCount, totalCount, participantCount })
 
         <header class='page-header'>
           <div class='conference-identity'>
-            <h1 class='conference-name'>第六届儿童舒缓安宁国际大会（2026）</h1>
+            <h1 class='conference-name'>第六届儿童舒缓安宁国际交流大会（2026）</h1>
             <p class='conference-name-en'>6th International Conference on Paediatric Palliative Care · 2026</p>
           </div>
           <nav class='display-nav' aria-label='大屏导航'>

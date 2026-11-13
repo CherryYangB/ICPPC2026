@@ -6,7 +6,7 @@ import { questionCards } from '@/shared/questions'
 const router = useRouter()
 
 const copy = {
-  headerZh: '儿童舒缓安宁大会 · 2026',
+  headerZh: '儿童舒缓安宁国际交流大会 · 2026',
   headerEn: 'Paediatric Palliative Care · 2026',
   sectionPrefix: '02 / EIGHT QUESTIONS · 八问 · ',
   titleZh: '选择您想回应的问题',

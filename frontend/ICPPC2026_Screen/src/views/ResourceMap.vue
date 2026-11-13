@@ -1061,7 +1061,7 @@ defineExpose({
       <div class="map-page">
         <header class="screen-header">
           <div class="brand">
-            <h1 class="brand-title">第六届儿童舒缓安宁国际大会（2026）</h1>
+            <h1 class="brand-title">第六届儿童舒缓安宁国际交流大会（2026）</h1>
             <p class="brand-subtitle">
               6th International Conference on Paediatric Palliative Care · 2026
             </p>

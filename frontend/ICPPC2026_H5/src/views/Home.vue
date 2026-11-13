@@ -9,7 +9,7 @@ const route = useRoute()
 const router = useRouter()
 
 const copy = {
-  headerZh: '儿童舒缓安宁大会 · 2026',
+  headerZh: '儿童舒缓安宁国际交流大会 · 2026',
   headerEn: 'Paediatric Palliative Care · 2026',
   section: '01 / JOIN · 参与',
   heroZh: '每一份经验，都值得被听见',

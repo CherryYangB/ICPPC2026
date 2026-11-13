@@ -15,7 +15,7 @@ const route = useRoute()
 const router = useRouter()
 
 const copy = {
-  headerZh: '儿童舒缓安宁大会 · 2026',
+  headerZh: '儿童舒缓安宁国际交流大会 · 2026',
   headerEn: 'Paediatric Palliative Care · 2026',
   section: '03 / CONTRIBUTE · 发表',
   titleZh: '分享您的观点',
